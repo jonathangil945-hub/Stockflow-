@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StockFlow | Sistema de Inventario</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --panel: rgba(15, 23, 42, 0.6);
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+            --radius-xl: 22px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.16), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(var(--accent2-rgb), 0.12), transparent 30%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-soft) 55%, var(--bg));
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .blob {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .blob.one {
+            top: -80px;
+            left: -60px;
+            background: var(--primary);
+        }
+
+        .blob.two {
+            right: -60px;
+            bottom: -80px;
+            background: #8b5cf6;
+        }
+
+        .dashboard-header,
+        .inventory-main,
+        footer {
+            position: relative;
+            z-index: 1;
+        }
+
+        .dashboard-header {
+            width: min(1200px, calc(100% - 24px));
+            margin: 18px auto;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            background: rgba(var(--surface-rgb), 0.6);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text);
+            min-width: 0;
+        }
+
+        .logo {
+            width: 52px;
+            height: 52px;
+            display: grid;
+            place-items: center;
+            font-size: 24px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            flex-shrink: 0;
+        }
+
+        .brand-text {
+            min-width: 0;
+        }
+
+        .brand-text strong {
+            display: block;
+            font-size: 1rem;
+        }
+
+        .brand-text span {
+            display: block;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .top-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .top-nav a {
+            color: var(--muted);
+            text-decoration: none;
+            padding: 10px 14px;
+            border-radius: 12px;
+            transition: 0.2s ease;
+            font-weight: 600;
+        }
+
+        .top-nav a:hover {
+            background: rgba(var(--fg-rgb), 0.08);
+            color: var(--text);
+        }
+
+        .inventory-main {
+            width: min(1200px, calc(100% - 24px));
+            margin: 0 auto;
+            padding-bottom: 24px;
+        }
+
+        .inventory-top {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .inventory-hero,
+        .inventory-card {
+            background: var(--panel);
+            border-radius: var(--radius-xl);
+            padding: 26px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .badge {
+            background: rgba(var(--primary-rgb), 0.2);
+            border: 1px solid rgba(var(--primary-rgb), 0.3);
+            padding: 8px 14px;
+            border-radius: 999px;
+            display: inline-block;
+            margin-bottom: 14px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--primary-light);
+        }
+
+        h1 {
+            margin: 10px 0 12px;
+            font-size: clamp(1.8rem, 4vw, 3rem);
+            line-height: 1.08;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+
+        p {
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .summary-list {
+            display: grid;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .summary-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .summary-icon {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            font-size: 20px;
+            border-radius: 12px;
+            background: rgba(var(--fg-rgb), 0.08);
+            flex-shrink: 0;
+        }
+
+        .actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 13px 16px;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            border-radius: 12px;
+            text-decoration: none;
+            border: none;
+            font-weight: 700;
+            transition: 0.2s ease;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: rgba(var(--fg-rgb), 0.1);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(var(--fg-rgb), 0.16);
+        }
+
+        .product-preview {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .preview-box {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(var(--fg-rgb), 0.04);
+            color: var(--text);
+            text-align: center;
+            font-weight: 600;
+        }
+
+        footer {
+            text-align: center;
+            margin: 20px auto 28px;
+            color: var(--muted);
+            width: min(1200px, calc(100% - 24px));
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 900px) {
+            .inventory-top {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 14px;
+            }
+
+            .brand {
+                width: 100%;
+            }
+
+            .top-nav {
+                width: 100%;
+            }
+
+            .top-nav a {
+                width: 100%;
+                text-align: center;
+                background: rgba(var(--fg-rgb), 0.05);
+            }
+
+            .inventory-hero,
+            .inventory-card {
+                padding: 18px;
+                border-radius: 18px;
+            }
+
+            h1 {
+                font-size: 1.9rem;
+            }
+
+            .summary-card {
+                align-items: flex-start;
+            }
+
+            .summary-icon {
+                width: 38px;
+                height: 38px;
+                font-size: 18px;
+            }
+
+            .product-preview {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .logo {
+                width: 46px;
+                height: 46px;
+                font-size: 22px;
+            }
+
+            .brand-text strong {
+                font-size: 0.95rem;
+            }
+
+            .brand-text span {
+                font-size: 0.84rem;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+            }
+
+            p {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=1">
+    <script src="{{ url_for('static', filename='js/theme.js') }}?v=1"></script>
+</head>
+
+<body>
+
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+
+    <header class="dashboard-header">
+        <a class="brand" href="{{ url_for('auth.index') }}">
+            <div class="logo">📦</div>
+            <div class="brand-text">
+                <strong>StockFlow</strong>
+                <span>Inventario • Ventas • QR</span>
+            </div>
+        </a>
+
+        <nav class="top-nav">
+            {% if current_role %}
+            <a href="{{ url_for('auth.login') }}">Ir a mi panel</a>
+            <a href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}">Ingresar</a>
+            {% endif %}
+        </nav>
+    </header>
+
+    <main class="inventory-main">
+        <section class="inventory-top">
+
+            <div class="inventory-hero">
+                <div class="badge">🚀 Bienvenido</div>
+
+                <h1>Controla tu almacén en un solo lugar</h1>
+
+                <p>
+                    Administra inventario, ventas y pagos con QR fácilmente desde computador o celular.
+                </p>
+
+                <div class="summary-list">
+                    <div class="summary-card">
+                        <div class="summary-icon">📦</div>
+                        <div>Inventario organizado y fácil de consultar</div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-icon">💳</div>
+                        <div>Pagos rápidos con QR para tus clientes</div>
+                    </div>
+
+                    <div class="summary-card">
+                        <div class="summary-icon">📱</div>
+                        <div>Diseño adaptable para usar desde el celular</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="inventory-card">
+                <h2>Ingresar</h2>
+
+                <div class="actions">
+                    <a class="btn" href="{{ url_for('auth.login') }}">Ingresar</a>
+                    <a class="btn btn-secondary" href="{{ url_for('auth.forgot_password') }}">Olvidé contraseña</a>
+                </div>
+
+                <div class="product-preview">
+                    <div class="preview-box">🛒 Cajero</div>
+                    <div class="preview-box">📦 Bodega</div>
+                    <div class="preview-box">👔 Admin</div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        © <span id="year"></span> StockFlow
+    </footer>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,19 @@
+# Secretos (nunca subir)
+.env
+.env.*
+!.env.example
+
+# Entornos y caché
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generados / respaldos locales
+static/barcodes/
+_respaldo_original/
+
+# Script local de subida
+subir_a_github.bat
+subida_log.txt

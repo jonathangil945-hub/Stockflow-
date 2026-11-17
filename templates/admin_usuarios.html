@@ -1,0 +1,74 @@
+{% extends "base_simple.html" %}
+{% block title %}Usuarios{% endblock %}
+{% block subtitle %}Administración de usuarios{% endblock %}
+
+{% block content %}
+<section class="card" style="display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap;">
+    <div>
+        <h2>📧 Alertas de stock bajo</h2>
+        <p class="sub" style="margin:0;">Cuando una talla/color queda con {{ low_stock_limit }} unidades o menos (por venta o salida),
+            se envía un correo a <strong>{{ alert_email or 'nadie (falta configurar un correo)' }}</strong>.
+            Va al primer administrador de la tienda que tenga correo; si ninguno tiene, a ADMIN_EMAIL del .env.</p>
+    </div>
+    <form method="POST" action="{{ url_for('admin.test_email') }}" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').textContent='Enviando...';">
+        <button class="btn btn-secondary" type="submit">Enviar correo de prueba</button>
+    </form>
+</section>
+
+<section class="card">
+    <h2>Nuevo usuario</h2>
+    <p class="sub">Crea cuentas para cajeros, bodegueros u otros administradores.</p>
+    <form method="POST" action="{{ url_for('admin.create_user') }}" class="grid-4" autocomplete="off">
+        <label>Usuario *<input name="username" required minlength="3" maxlength="40" placeholder="ej: caja1"></label>
+        <label>Nombre<input name="full_name" placeholder="Nombre completo"></label>
+        <label>Correo<input type="email" name="email" placeholder="para recuperar la contraseña"></label>
+        <label>Rol *
+            <select name="role" required>
+                {% for r in roles %}<option value="{{ r }}" {% if r == 'cajero' %}selected{% endif %}>{{ role_labels[r] }}</option>{% endfor %}
+            </select>
+        </label>
+        <label>Contraseña *<input type="password" name="password" required minlength="6" autocomplete="new-password"></label>
+        <div><button class="btn" type="submit">➕ Crear usuario</button></div>
+    </form>
+</section>
+
+<section class="card">
+    <h2>Usuarios ({{ users|length }})</h2>
+    <p class="sub">Cambia el rol, el correo o desactiva un usuario. Un usuario desactivado no puede ingresar.</p>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Usuario</th><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th></th><th>Contraseña</th></tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td><form method="POST" action="{{ url_for('admin.edit_user', user_id=u.id) }}" id="edit-{{ u.id }}"></form><strong>{{ u.username }}</strong>{% if u.id == session.user_id %} <span class="muted">(tú)</span>{% endif %}</td>
+                    <td><input form="edit-{{ u.id }}" name="full_name" value="{{ u.full_name or '' }}"></td>
+                    <td><input form="edit-{{ u.id }}" type="email" name="email" value="{{ u.email or '' }}"></td>
+                    <td>
+                        <select form="edit-{{ u.id }}" name="role">
+                            {% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ role_labels[r] }}</option>{% endfor %}
+                        </select>
+                    </td>
+                    <td>
+                        <label style="display:flex; align-items:center; gap:8px; color:inherit;">
+                            <input form="edit-{{ u.id }}" type="checkbox" name="active" style="width:auto;" {% if u.active %}checked{% endif %}>
+                            <span class="pill {{ 'on' if u.active else 'off' }}">{{ 'Activo' if u.active else 'Inactivo' }}</span>
+                        </label>
+                    </td>
+                    <td><button form="edit-{{ u.id }}" class="btn btn-secondary btn-sm" type="submit">Guardar</button></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.reset_user_password', user_id=u.id) }}"
+                            style="display:flex; gap:6px;" onsubmit="return confirm('¿Cambiar la contraseña de {{ u.username }}?')">
+                            <input type="password" name="password" minlength="6" required placeholder="Nueva" autocomplete="new-password" style="min-width:110px;">
+                            <button class="btn btn-secondary btn-sm" type="submit">Cambiar</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

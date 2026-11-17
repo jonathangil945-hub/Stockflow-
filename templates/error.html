@@ -1,0 +1,10 @@
+{% extends "base_simple.html" %}
+{% block title %}Error {{ code }}{% endblock %}
+
+{% block content %}
+<section class="card narrow" style="text-align:center;">
+    <h1 style="font-size:3rem;">{{ code }}</h1>
+    <p class="sub">{{ message }}</p>
+    <a class="btn" href="{{ url_for('auth.index') }}">Ir al inicio</a>
+</section>
+{% endblock %}

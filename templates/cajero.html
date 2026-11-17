@@ -1,0 +1,1815 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Cajero - Ventas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+
+    <style>
+        .field-group input,
+        .field-group select,
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s ease;
+            min-height: 50px;
+        }
+
+        .field-group input::placeholder,
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--muted-2);
+        }
+
+        .field-group input:focus,
+        .field-group select:focus,
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: rgba(var(--primary-rgb), 0.7);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .field-group select option,
+        select option {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .field-group select optgroup,
+        select optgroup {
+            background: var(--bg-soft);
+            color: var(--primary-light);
+            font-weight: 700;
+        }
+
+        :root {
+            --bg: #0f172a;
+            --bg-soft: #111827;
+            --panel: rgba(255, 255, 255, 0.08);
+            --panel-strong: rgba(255, 255, 255, 0.12);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #f5f6f6;
+            --muted: #cbd5e1;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+            --container: 1180px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            overflow-x: hidden;
+        }
+
+        body.dashboard-body {
+            background:
+                radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.16), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(var(--accent2-rgb), 0.12), transparent 30%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-soft) 55%, var(--bg));
+            color: var(--text);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            padding: 18px 14px 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .blob {
+            position: fixed;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.22;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .blob.one {
+            top: -80px;
+            left: -60px;
+            background: var(--primary);
+        }
+
+        .blob.two {
+            right: -60px;
+            bottom: -80px;
+            background: #8b5cf6;
+        }
+
+        .dashboard-header,
+        .inventory-main,
+        .dashboard-footer {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: var(--container);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .dashboard-header {
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: rgba(var(--surface-rgb), 0.72);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text);
+            min-width: 0;
+        }
+
+        .logo {
+            width: 52px;
+            height: 52px;
+            border-radius: 15px;
+            display: grid;
+            place-items: center;
+            font-size: 1.35rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.32);
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .brand-title strong {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .brand-title span {
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+
+        .top-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .top-nav a {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 14px;
+            border-radius: 12px;
+            transition: 0.2s ease;
+            font-size: 0.94rem;
+            white-space: nowrap;
+        }
+
+        .top-nav a:hover {
+            color: var(--text);
+            background: rgba(var(--fg-rgb), 0.08);
+        }
+
+        .inventory-main {
+            margin-top: 18px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .inventory-card,
+        .panel,
+        .summary-box {
+            border: 1px solid var(--border);
+            background: rgba(var(--surface-rgb), 0.62);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+        }
+
+        .inventory-card {
+            border-radius: var(--radius-xl);
+            padding: 24px;
+            width: 100%;
+        }
+
+        .card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .card-head h2 {
+            margin: 0 0 6px;
+            font-size: 1.25rem;
+        }
+
+        .card-head p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.93rem;
+            line-height: 1.6;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 18px;
+            align-items: start;
+            width: 100%;
+        }
+
+        .panel {
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            min-width: 0;
+        }
+
+        .panel-head {
+            margin-bottom: 14px;
+        }
+
+        .panel-head h3 {
+            margin: 0 0 6px;
+            font-size: 1.05rem;
+        }
+
+        .panel-head p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+            line-height: 1.55;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+
+        .field-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-soft);
+        }
+
+        .field-group input,
+        .field-group select,
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: rgba(var(--fg-rgb), 0.06);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s ease;
+            min-height: 50px;
+        }
+
+        .field-group input::placeholder,
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--muted-2);
+        }
+
+        .field-group input:focus,
+        .field-group select:focus,
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: rgba(var(--primary-rgb), 0.7);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 18px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            color: white;
+            font-weight: 700;
+            font-size: 0.94rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+            box-shadow: 0 12px 24px rgba(var(--primary-rgb), 0.22);
+            min-height: 48px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, var(--primary-hover), var(--accent2-hover));
+        }
+
+        .btn-secondary {
+            background: rgba(var(--fg-rgb), 0.08);
+            box-shadow: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(var(--fg-rgb), 0.12);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            box-shadow: 0 12px 24px rgba(220, 38, 38, 0.22);
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #b91c1c, #991b1b);
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            min-height: auto;
+            font-size: 0.82rem;
+            border-radius: 12px;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 760px;
+            background: rgba(var(--fg-rgb), 0.02);
+        }
+
+        .inventory-table thead {
+            background: rgba(var(--fg-rgb), 0.06);
+        }
+
+        .inventory-table th,
+        .inventory-table td {
+            text-align: left;
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(var(--fg-rgb), 0.08);
+            font-size: 0.94rem;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .inventory-table th {
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+
+        .inventory-table td {
+            color: var(--muted);
+        }
+
+        .inventory-table tbody tr:hover {
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .summary-box {
+            padding: 16px;
+            border-radius: 18px;
+            margin-top: 18px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+            color: var(--muted);
+        }
+
+        .summary-row strong {
+            color: var(--text);
+        }
+
+        .total-row {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #22c55e;
+            margin-top: 6px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(var(--fg-rgb), 0.08);
+        }
+
+        .total-row strong {
+            color: #22c55e;
+        }
+
+        .alert {
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            font-size: 0.94rem;
+        }
+
+        .alert-error {
+            background: rgba(239, 68, 68, 0.14);
+            color: var(--danger-text);
+            border-color: rgba(239, 68, 68, 0.28);
+        }
+
+        .alert-success {
+            background: rgba(34, 197, 94, 0.14);
+            color: var(--ok-text);
+            border-color: rgba(34, 197, 94, 0.28);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.14);
+            color: var(--warn-text);
+            border-color: rgba(245, 158, 11, 0.28);
+        }
+
+        .form-actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+
+        /* FIX #5: el modal usa .active para mostrarse; sin inline style conflictivo */
+        .movement-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.62);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9999;
+        }
+
+        .movement-modal.active {
+            display: flex;
+        }
+
+        .movement-modal-content {
+            width: 100%;
+            max-width: 700px;
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+            background: rgba(var(--surface-rgb), 0.98);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+        }
+
+        .movement-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 18px;
+            border-bottom: 1px solid rgba(var(--fg-rgb), 0.08);
+        }
+
+        .movement-modal-header h3 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        .movement-close {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(var(--fg-rgb), 0.08);
+            color: white;
+            font-size: 1.4rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .movement-close:hover {
+            background: rgba(var(--fg-rgb), 0.14);
+        }
+
+        @media (max-width: 1100px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            body.dashboard-body {
+                padding: 14px 10px 22px;
+            }
+
+            .dashboard-header {
+                padding: 16px;
+                justify-content: center;
+                text-align: center;
+            }
+
+            .brand {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .inventory-card,
+            .panel {
+                padding: 16px;
+            }
+
+            .card-head {
+                align-items: flex-start;
+            }
+
+            .inventory-table {
+                min-width: 680px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body.dashboard-body {
+                padding: 10px 8px 18px;
+            }
+
+            .dashboard-header {
+                border-radius: 18px;
+                padding: 14px;
+            }
+
+            .inventory-card {
+                padding: 14px;
+                border-radius: 18px;
+            }
+
+            .panel {
+                padding: 14px;
+                border-radius: 16px;
+            }
+
+            .card-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .card-head>div:last-child {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .top-nav {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .top-nav a {
+                width: 100%;
+                text-align: center;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .summary-row {
+                font-size: 0.94rem;
+            }
+
+            .movement-modal {
+                padding: 10px;
+            }
+
+            .movement-modal-content {
+                max-height: calc(100vh - 20px);
+                border-radius: 18px;
+            }
+
+            .movement-modal-header {
+                padding: 14px;
+            }
+
+            .inventory-main {
+                margin-top: 14px;
+                gap: 14px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .logo {
+                width: 46px;
+                height: 46px;
+                font-size: 1.15rem;
+            }
+
+            .brand-title strong {
+                font-size: 0.95rem;
+            }
+
+            .brand-title span {
+                font-size: 0.82rem;
+            }
+
+            .card-head h2,
+            .panel-head h3 {
+                font-size: 1rem;
+            }
+
+            .field-group input,
+            .field-group select,
+            input,
+            select,
+            textarea {
+                padding: 12px;
+                min-height: 46px;
+            }
+        }
+
+        .scanner-actions {
+            width: 100%;
+            justify-content: flex-start;
+        }
+
+        .scanner-box {
+            width: 100%;
+            margin-top: 16px;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: rgba(var(--fg-rgb), 0.04);
+            display: none;
+        }
+
+        .scanner-box.active {
+            display: block;
+        }
+
+        .scanner-box-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            color: var(--text);
+        }
+
+        .barcode-reader {
+            width: 100%;
+            min-height: 280px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #0b1220;
+            border: 1px solid rgba(var(--fg-rgb), 0.08);
+        }
+
+        .barcode-reader video {
+            width: 100% !important;
+            height: 280px !important;
+            object-fit: cover !important;
+            border-radius: 16px;
+            display: block;
+        }
+
+        .barcode-reader img {
+            max-width: 100%;
+            display: block;
+        }
+
+        #reader__scan_region {
+            min-height: 280px;
+            background: #0b1220;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        #reader__dashboard {
+            padding: 10px 0 0 0;
+            color: var(--text);
+        }
+
+        #reader__dashboard_section_csr button,
+        #reader__dashboard_section_swaplink {
+            margin-top: 8px;
+        }
+
+        @media (max-width: 640px) {
+            .scanner-box {
+                padding: 10px;
+            }
+
+            .barcode-reader {
+                min-height: 240px;
+            }
+
+            .barcode-reader video,
+            #reader__scan_region {
+                height: 240px !important;
+                min-height: 240px !important;
+            }
+        }
+
+        /* ===== Añadidos ===== */
+        .top-nav a.active { background: rgba(var(--primary-rgb),.22); border-color: rgba(var(--primary-rgb),.45); }
+        .variant-options { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        .variant-option { padding: 12px; border-radius: 14px; border: 1px solid rgba(var(--fg-rgb),.14);
+            background: rgba(var(--fg-rgb),.06); color: inherit; cursor: pointer; text-align: left; font: inherit; }
+        .variant-option:hover { border-color: rgba(var(--primary-rgb),.7); background: rgba(var(--primary-rgb),.14); }
+        .variant-option strong { display: block; font-size: 1.05rem; }
+        .variant-option span { opacity: .75; font-size: .85rem; }
+        .sale-status { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .78rem; font-weight: 700; }
+        .sale-status.PAID { background: rgba(34,197,94,.16); color: var(--ok-text); }
+        .sale-status.PENDING { background: rgba(245,158,11,.16); color: var(--warn-text); }
+        .sale-status.other { background: rgba(239,68,68,.16); color: var(--danger-text); }
+        .today-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=1">
+    <script src="{{ url_for('static', filename='js/theme.js') }}?v=1"></script>
+    <style id="receiptStyles">
+        /* ================= RECIBO ================= */
+        .rcpt-modal { max-width: 520px !important; }
+        .rcpt-stage { padding: 18px; max-height: 70vh; overflow-y: auto; }
+        .rcpt-actions { padding: 0 18px 18px 18px; flex-wrap: wrap; }
+        .rcpt-thermal { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 0 18px 10px; font-size: .85rem; color: var(--muted, #cbd5e1); }
+        .rcpt-thermal select { width: auto; padding: 6px 10px; border-radius: 10px; }
+        .rcpt {
+            --rc-accent: var(--primary, #3b82f6);
+            --rc-accent2: var(--accent2, #8b5cf6);
+            position: relative;
+            max-width: 400px;
+            margin: 0 auto;
+            background: #ffffff;
+            color: #1f2937;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            border-radius: 18px 18px 6px 6px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+            overflow: hidden;
+        }
+        .rcpt::before {
+            content: ""; display: block; height: 8px;
+            background: linear-gradient(90deg, var(--rc-accent), var(--rc-accent2));
+        }
+        .rcpt-head { text-align: center; padding: 22px 24px 16px; }
+        .rcpt-logo {
+            width: 56px; height: 56px; margin: 0 auto 10px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; font-weight: 800; color: #fff;
+            background: linear-gradient(135deg, var(--rc-accent), var(--rc-accent2));
+        }
+        .rcpt-store { margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -.01em; color: #111827; }
+        .rcpt-store-info { margin: 4px 0 0; font-size: .78rem; color: #6b7280; min-height: 0; }
+        .rcpt-store-info:empty { display: none; }
+        .rcpt-badge {
+            display: inline-block; margin-top: 12px; padding: 5px 12px; border-radius: 999px;
+            font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+            color: var(--rc-accent); background: color-mix(in srgb, var(--rc-accent) 12%, #fff);
+        }
+        .rcpt-meta {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
+            margin: 0 20px; padding: 14px 4px; border-top: 2px dashed #e5e7eb; border-bottom: 2px dashed #e5e7eb;
+        }
+        .rcpt-meta div { display: flex; flex-direction: column; min-width: 0; }
+        .rcpt-meta span { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: #9ca3af; font-weight: 600; }
+        .rcpt-meta strong { font-size: .86rem; color: #111827; font-weight: 600; overflow-wrap: anywhere; }
+        .rcpt-items { padding: 14px 24px 4px; }
+        .rcpt-items-head {
+            display: flex; justify-content: space-between; font-size: .68rem; text-transform: uppercase;
+            letter-spacing: .06em; color: #9ca3af; font-weight: 700; margin-bottom: 6px;
+        }
+        .rcpt-item { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
+        .rcpt-item:last-child { border-bottom: 0; }
+        .rcpt-item-name { font-weight: 700; color: #111827; font-size: .92rem; }
+        .rcpt-item-sub { display: block; font-size: .78rem; color: #6b7280; margin-top: 2px; }
+        .rcpt-item-old { text-decoration: line-through; color: #9ca3af; margin-left: 4px; }
+        .rcpt-item-total { font-weight: 700; color: #111827; white-space: nowrap; font-size: .92rem; }
+        .rcpt-count { font-size: .75rem; color: #9ca3af; text-align: right; padding: 4px 0 0; }
+        .rcpt-totals { margin: 8px 20px 0; padding: 12px 4px 0; border-top: 2px dashed #e5e7eb; }
+        .rcpt-row { display: flex; justify-content: space-between; font-size: .88rem; color: #4b5563; padding: 3px 0; }
+        .rcpt-row strong { color: #111827; font-weight: 600; }
+        .rcpt-discount strong { color: #16a34a; }
+        .rcpt-total {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 10px; padding: 14px 16px; border-radius: 14px; color: #fff;
+            background: linear-gradient(135deg, var(--rc-accent), var(--rc-accent2));
+        }
+        .rcpt-total span { font-weight: 600; font-size: .9rem; }
+        .rcpt-total strong { font-size: 1.45rem; font-weight: 800; letter-spacing: -.01em; }
+        .rcpt-foot { text-align: center; padding: 18px 24px 26px; font-size: .78rem; color: #6b7280; }
+        .rcpt-foot p { margin: 4px 0; }
+        .rcpt-thanks { font-size: 1.05rem; font-weight: 800; color: #111827; }
+        .rcpt-brand { margin-top: 10px !important; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: #cbd5e1; }
+        /* borde inferior tipo ticket */
+        .rcpt::after {
+            content: ""; display: block; height: 12px;
+            background: radial-gradient(circle at 8px -2px, transparent 8px, #e5e7eb 8.5px, transparent 9px) repeat-x;
+            background-size: 16px 12px; opacity: .9;
+        }
+    </style>
+</head>
+
+<body class="dashboard-body">
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+
+    <header class="dashboard-header">
+        <a href="{{ url_for('auth.index') }}" class="brand">
+            <div class="logo">💳</div>
+            <div class="brand-title">
+                <strong>Módulo Cajero</strong>
+                <span>Ventas, recibos y control de stock</span>
+            </div>
+        </a>
+        <nav class="top-nav">
+            {% if current_role == 'admin' %}<a href="{{ url_for('bodega.dashboard') }}">Bodega</a>{% endif %}
+            <a class="active" href="{{ url_for('cajero.dashboard') }}">Cajero</a>
+            {% if current_role in ['admin', 'bodega', 'cajero'] %}<a href="{{ url_for('etiquetas.page') }}">🏷️ Etiquetas</a>{% endif %}
+            {% if current_role == 'admin' %}
+            <a href="{{ url_for('reportes.dashboard') }}">Reportes</a>
+            <a href="{{ url_for('admin.users') }}">Usuarios</a>
+            {% endif %}
+            {% if is_superadmin %}<a href="{{ url_for('superadmin.stores') }}">🏬 Tiendas</a>{% endif %}
+            <a href="{{ url_for('auth.change_password') }}" title="Cambiar contraseña">👤 {{ current_username or '' }}{% if current_business_name %} · 🏪 {{ current_business_name }}{% endif %}</a>
+            <a href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+        </nav>
+    </header>
+
+    <main class="inventory-main">
+        <section class="inventory-card">
+            <div class="card-head">
+                <div>
+                    <h2>Ventas</h2>
+                    <p>Registra ventas de zapatos, escanea códigos QR y genera recibos.</p>
+                </div>
+                <div class="form-actions scanner-actions" style="margin-top:0;">
+                    <button type="button" class="btn btn-secondary" onclick="focusBarcodeInput()">
+                        Escanear producto
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearCart()">
+                        Vaciar venta
+                    </button>
+                </div>
+                <div id="scannerBox" class="scanner-box">
+                    <div class="scanner-box-head">
+                        <strong>Escáner</strong>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="stopCamera()"
+                            id="closeScannerBtn" style="display:none;">
+                            Cerrar cámara
+                        </button>
+                    </div>
+                    <div id="reader" class="barcode-reader"></div>
+                </div>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="display:grid; gap:10px; margin:16px 0;">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <form id="saleForm" method="POST">
+                <input type="hidden" name="sale_items_json" id="saleItemsJson">
+                <input type="hidden" name="sale_subtotal" id="saleSubtotalInput">
+                <input type="hidden" name="sale_total" id="saleTotalInput">
+                <input type="hidden" name="sale_discount_total" id="saleDiscountTotalInput">
+                <input type="hidden" id="barcodeApiUrl" value="{{ url_for('cajero.product_by_barcode') }}">
+                <input type="hidden" id="createCheckoutUrl" value="{{ url_for('cajero.create_checkout') }}">
+
+                <div class="dashboard-grid">
+                    <!-- COLUMNA IZQUIERDA -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>Buscar productos</h3>
+                            <p>Escribe el nombre o escanea el código QR del producto.</p>
+                        </div>
+                        <div class="filters" style="margin-bottom:16px;">
+                            <div class="field-group">
+                                <label for="productSearch">Buscar zapato</label>
+                                <input type="text" id="productSearch" placeholder="Nombre, modelo o código"
+                                    autocomplete="off" oninput="filterProducts()">
+                            </div>
+                            <div class="field-group">
+                                <label for="barcodeInput">Código del producto</label>
+                                <input type="text" id="barcodeInput" placeholder="Escanea aquí el código"
+                                    autocomplete="off" onkeydown="handleBarcodeEnter(event)">
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="inventory-table" id="productsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Producto</th>
+                                        <th>Modelo</th>
+                                        <th>Talla</th>
+                                        <th>Color</th>
+                                        <th>Precio</th>
+                                        <th>Stock</th>
+                                        <th>Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="productsTableBody">
+                                    {% if products %}
+                                    {% for p in products %}
+                                    <tr class="product-row" data-id="{{ p.id }}" data-name="{{ p.name }}"
+                                        data-model="{{ p.model or '' }}" data-size="{{ p.size or '' }}"
+                                        data-color="{{ p.color or '' }}" data-price="{{ p.price or 0 }}"
+                                        data-stock="{{ p.stock or 0 }}" data-barcode="{{ p.barcode or '' }}">
+                                        <td>{{ p.barcode or '—' }}</td>
+                                        <td>{{ p.name }}</td>
+                                        <td>{{ p.model or '—' }}</td>
+                                        <td>{{ p.size or '—' }}</td>
+                                        <td>{{ p.color or '—' }}</td>
+                                        <td>$ {{ "{:,.0f}".format((p.price or 0)|float).replace(",", ".") }}</td>
+                                        <td>{{ p.stock or 0 }}{% if p.status != 'Disponible' %} <small style="opacity:.7">({{ p.status }})</small>{% endif %}</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm"
+                                                onclick="addToCartFromButton(this)">
+                                                Agregar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="8" style="text-align:center;">No hay productos registrados.</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DERECHA -->
+                    <div class="panel">
+                        <div class="panel-head">
+                            <h3>Venta actual</h3>
+                            <p>Puedes vender uno o varios pares y modificar precios si das rebaja.</p>
+                        </div>
+                        <div class="field-grid" style="margin-bottom:16px;">
+                            <div class="field-group">
+                                <label for="customerName">Cliente</label>
+                                <input type="text" name="customer_name" id="customerName"
+                                    placeholder="Nombre del cliente">
+                            </div>
+                            <div class="field-group">
+                                <label for="customerPhone">Teléfono</label>
+                                <input type="text" name="customer_phone" id="customerPhone"
+                                    placeholder="Número del cliente">
+                            </div>
+                            <div class="field-group">
+                                <label for="paymentMethod">Método de pago</label>
+                                <select name="payment_method" id="paymentMethod" required
+                                    onchange="handlePaymentMethodChange()">
+                                    <option value="">Selecciona</option>
+                                    <option value="efectivo">Efectivo</option>
+                                    <option value="transferencia_manual">Transferencia manual</option>
+                                    <option value="mixto">Mixto</option>
+                                    <optgroup label="Pagos en línea con Wompi">
+                                        <option value="nequi">Nequi</option>
+                                        <option value="daviplata">Daviplata</option>
+                                        <option value="pse">PSE</option>
+                                        <option value="tarjeta">Tarjeta</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div id="onlinePaymentBox" style="display:none; margin-top:12px;">
+                                <div class="alert alert-warning">
+                                    Este método abrirá el checkout de Wompi para completar el pago.
+                                </div>
+                            </div>
+                            <div class="field-group">
+                                <label for="saleNote">Observación</label>
+                                <input type="text" name="sale_note" id="saleNote"
+                                    placeholder="Ej: Se hizo descuento especial">
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="inventory-table" id="cartTable">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Modelo</th>
+                                        <th>Talla / Color</th>
+                                        <th>Cant.</th>
+                                        <th>Precio</th>
+                                        <th>Desc.</th>
+                                        <th>Subtotal</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cartTableBody">
+                                    <tr id="emptyCartRow">
+                                        <td colspan="8" style="text-align:center;">No has agregado productos a la venta.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="summary-box" style="margin-top:18px;">
+                            <div class="summary-row">
+                                <span>Subtotal</span>
+                                <strong id="subtotalValue">$ 0</strong>
+                            </div>
+                            <div class="summary-row">
+                                <span>Descuento total</span>
+                                <strong id="discountValue">$ 0</strong>
+                            </div>
+                            <div class="summary-row total-row">
+                                <span>Total a pagar</span>
+                                <strong id="totalValue">$ 0</strong>
+                            </div>
+                        </div>
+                        <div class="form-actions" style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+                            <button type="button" class="btn btn-secondary" onclick="printReceiptPreview()">
+                                Ver recibo
+                            </button>
+                            <button type="submit" class="btn" id="submitSaleBtn" onclick="prepareSaleData(event)">
+                                Finalizar venta
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+        <section class="inventory-card" style="margin-top:22px;">
+            <div class="card-head today-head">
+                <div>
+                    <h2>Ventas de hoy</h2>
+                    <p>{{ today_sales|length }} venta(s) • Total pagado:
+                        <strong>$ {{ "{:,.0f}".format(today_total|float).replace(",", ".") }}</strong></p>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="inventory-table">
+                    <thead>
+                        <tr><th>Hora</th><th>Recibo</th><th>Cliente</th><th>Método</th><th>Total</th>
+                            <th>Estado</th><th>Vendedor</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for s in today_sales %}
+                        <tr>
+                            <td>{{ s.created_at.strftime('%H:%M') if s.created_at else '—' }}</td>
+                            <td>{{ s.receipt_number or s.reference or s.id }}</td>
+                            <td>{{ s.customer_name or 'Consumidor final' }}</td>
+                            <td>{{ payment_labels.get(s.payment_method, s.payment_method) }}</td>
+                            <td>$ {{ "{:,.0f}".format((s.total or 0)|float).replace(",", ".") }}</td>
+                            <td><span class="sale-status {{ s.status if s.status in ['PAID','PENDING'] else 'other' }}">
+                                {{ {'PAID':'Pagada','PENDING':'Pendiente','DECLINED':'Rechazada','VOIDED':'Anulada',
+                                    'ERROR':'Error','STOCK_ERROR':'Sin stock','AMOUNT_MISMATCH':'Monto distinto'}.get(s.status, s.status) }}
+                            </span></td>
+                            <td>{{ s.seller or '—' }}</td>
+                            <td style="white-space:nowrap;">
+                                {% if s.status == 'PAID' %}
+                                <a class="btn btn-secondary btn-sm" href="{{ url_for('cajero.dashboard', sale_id=s.id) }}">Recibo</a>
+                                {% elif s.status == 'PENDING' and s.reference %}
+                                <a class="btn btn-secondary btn-sm" href="{{ url_for('cajero.payment_status', reference=s.reference) }}">Verificar</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="8" style="text-align:center;">Aún no hay ventas hoy.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Modal elegir talla / color -->
+        <div id="variantModal" class="movement-modal">
+            <div class="movement-modal-content" style="max-width:620px;">
+                <div class="movement-modal-header">
+                    <h3 id="variantModalTitle">Elige talla y color</h3>
+                    <button type="button" class="movement-close" onclick="closeVariantModal()">×</button>
+                </div>
+                <div style="padding:18px;">
+                    <div id="variantOptions" class="variant-options"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="receiptModal" class="movement-modal">
+            <div class="movement-modal-content rcpt-modal">
+                <div class="movement-modal-header">
+                    <h3>🧾 Recibo de venta</h3>
+                    <button type="button" class="movement-close" onclick="closeReceiptModal()">×</button>
+                </div>
+                <div class="rcpt-stage">
+                    <div id="receiptContent">
+                        <article class="rcpt">
+                            <header class="rcpt-head">
+                                <div class="rcpt-logo">{{ ((store.name or current_business_name or 'S')|trim)[:1]|upper }}</div>
+                                <h2 class="rcpt-store">{{ store.name or current_business_name or "Mi tienda" }}</h2>
+                                <p class="rcpt-store-info">
+                                    {%- set info = [] -%}
+                                    {%- if store.nit %}{% set _ = info.append('NIT ' ~ store.nit) %}{% endif -%}
+                                    {%- if store.address %}{% set _ = info.append(store.address) %}{% endif -%}
+                                    {%- if store.phone %}{% set _ = info.append('Tel. ' ~ store.phone) %}{% endif -%}
+                                    {{ info|join(' · ') }}
+                                </p>
+                                <span class="rcpt-badge">Recibo de compra</span>
+                            </header>
+
+                            <section class="rcpt-meta">
+                                <div><span>Recibo N.º</span><strong id="receiptNumber">(vista previa)</strong></div>
+                                <div><span>Fecha</span><strong id="receiptDate">—</strong></div>
+                                <div><span>Cliente</span><strong id="receiptCustomer">Consumidor final</strong></div>
+                                <div><span>Teléfono</span><strong id="receiptPhone">—</strong></div>
+                                <div><span>Método de pago</span><strong id="receiptPayment">—</strong></div>
+                            </section>
+
+                            <section class="rcpt-items">
+                                <div class="rcpt-items-head"><span>Producto</span><span>Valor</span></div>
+                                <div id="receiptTableBody"></div>
+                                <div class="rcpt-count" id="receiptCount"></div>
+                            </section>
+
+                            <section class="rcpt-totals">
+                                <div class="rcpt-row"><span>Subtotal</span><strong id="receiptSubtotal">$ 0</strong></div>
+                                <div class="rcpt-row rcpt-discount" id="receiptDiscountRow"><span>Descuento</span><strong id="receiptDiscount">$ 0</strong></div>
+                                <div class="rcpt-total"><span>Total pagado</span><strong id="receiptTotal">$ 0</strong></div>
+                            </section>
+
+                            <footer class="rcpt-foot">
+                                <p class="rcpt-thanks">¡Gracias por tu compra!</p>
+                                <p>Conserva este recibo para cambios o devoluciones según las políticas del almacén.</p>
+                                <p class="rcpt-brand">Generado con StockFlow</p>
+                            </footer>
+                        </article>
+                    </div>
+                </div>
+                <div class="rcpt-thermal">
+                    <label for="thermalWidth">Mini impresora · ancho del papel</label>
+                    <select id="thermalWidth">
+                        <option value="48">48 mm (P1 / 50 mm)</option>
+                        <option value="57">57-58 mm</option>
+                        <option value="80">80 mm</option>
+                    </select>
+                </div>
+                <div class="form-actions rcpt-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeReceiptModal()">Cerrar</button>
+                    <button type="button" class="btn btn-secondary" onclick="thermalReceipt()">📱 Mini impresora</button>
+                    <button type="button" class="btn" onclick="printReceipt()">🖨️ Imprimir recibo</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+    <script>
+        const VARIANTS = {{ variants_map|tojson }};
+        const SERVER_RECEIPT = {{ receipt|tojson }};
+        const WOMPI_METHODS = ['nequi', 'daviplata', 'tarjeta', 'pse'];
+        const PAYMENT_LABELS = {{ payment_labels|tojson }};
+
+        let cart = [];
+        let html5QrCode = null;
+        let cameraRunning = false;
+        let pendingProduct = null;
+
+        function formatCOP(value) {
+            const num = Number(value || 0);
+            return '$ ' + num.toLocaleString('es-CO', { maximumFractionDigits: 0 });
+        }
+
+        function esc(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        /* ── WOMPI box ── */
+        function handlePaymentMethodChange() {
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            document.getElementById('onlinePaymentBox').style.display =
+                WOMPI_METHODS.includes(paymentMethod) ? 'block' : 'none';
+        }
+
+        /* ── ESCÁNER ── */
+        async function focusBarcodeInput() {
+            const scannerBox = document.getElementById('scannerBox');
+            const closeBtn = document.getElementById('closeScannerBtn');
+            if (typeof Html5Qrcode === 'undefined') {
+                alert('No se pudo cargar el lector de cámara. Revisa tu conexión a internet o escribe el código.');
+                return;
+            }
+            scannerBox.classList.add('active');
+            closeBtn.style.display = 'inline-flex';
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("reader", { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false });
+            if (cameraRunning) return;
+            try {
+                const cameras = await Html5Qrcode.getCameras();
+                if (!cameras.length) { alert('No hay cámaras disponibles'); return; }
+                let cameraId = cameras[0].id;
+                const backCamera = cameras.find(cam => /back|rear|environment|trasera/i.test(cam.label || ''));
+                if (backCamera) cameraId = backCamera.id;
+                await html5QrCode.start(
+                    cameraId,
+                    { fps: 10, aspectRatio: 1.7778, qrbox: (w, h) => { const side = Math.max(Math.floor(Math.min(w, h) * 0.7), 160); return { width: side, height: side }; } },
+                    async (decodedText) => {
+                        await stopCamera();
+                        const barcodeInput = document.getElementById('barcodeInput');
+                        barcodeInput.value = decodedText;
+                        await searchProductByBarcode(decodedText, barcodeInput);
+                    },
+                    () => { }
+                );
+                cameraRunning = true;
+            } catch (error) {
+                console.error(error);
+                alert('No se pudo abrir la cámara. Revisa los permisos del navegador.');
+            }
+        }
+
+        async function stopCamera() {
+            const scannerBox = document.getElementById('scannerBox');
+            const closeBtn = document.getElementById('closeScannerBtn');
+            try {
+                if (html5QrCode && cameraRunning) {
+                    await html5QrCode.stop();
+                    await html5QrCode.clear();
+                }
+            } catch (error) { console.error(error); }
+            cameraRunning = false;
+            scannerBox.classList.remove('active');
+            closeBtn.style.display = 'none';
+        }
+
+        /* ── BÚSQUEDA ── */
+        function filterProducts() {
+            const query = document.getElementById('productSearch').value.toLowerCase().trim();
+            document.querySelectorAll('.product-row').forEach(row => {
+                const text = [row.dataset.name, row.dataset.model, row.dataset.size, row.dataset.color, row.dataset.barcode]
+                    .join(' ').toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        function highlightProductRow(barcode) {
+            document.querySelectorAll('.product-row').forEach(row => {
+                const match = (row.dataset.barcode || '').trim() === String(barcode).trim();
+                row.style.outline = match ? '2px solid rgba(59,130,246,0.9)' : '';
+                row.style.background = match ? 'rgba(59,130,246,0.10)' : '';
+                if (match) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        }
+
+        async function handleBarcodeEnter(event) {
+            if (event.key !== 'Enter') return;
+            event.preventDefault();
+            const barcode = event.target.value.trim();
+            if (!barcode) return;
+            await searchProductByBarcode(barcode, event.target);
+        }
+
+        async function searchProductByBarcode(barcode, inputElement = null) {
+            const baseUrl = document.getElementById('barcodeApiUrl').value;
+            try {
+                if (inputElement) inputElement.disabled = true;
+                const response = await fetch(`${baseUrl}?barcode=${encodeURIComponent(barcode)}`);
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok || !data.product) {
+                    alert(data.message || 'Producto no encontrado');
+                    if (inputElement) inputElement.value = '';
+                    return;
+                }
+                const p = data.product;
+                if (p.variants && p.variants.length) VARIANTS[String(p.id)] = p.variants;
+                const productInfo = {
+                    id: p.id, name: p.name, model: p.model || '', size: p.size || '', color: p.color || '',
+                    price: Number(p.price || 0), stock: Number(p.stock || 0), barcode: p.barcode || ''
+                };
+                const scannedVariant = p.selected_variant_id
+                    ? (p.variants || []).find(v => v.id === p.selected_variant_id) : null;
+                if (scannedVariant) addProductToCart(productInfo, scannedVariant);   // etiqueta de talla/color
+                else chooseVariantAndAdd(productInfo);
+                highlightProductRow(p.barcode);
+                if (inputElement) inputElement.value = '';
+            } catch (error) {
+                console.error(error);
+                alert('Error buscando producto');
+            } finally {
+                if (inputElement) { inputElement.disabled = false; inputElement.focus(); }
+            }
+        }
+
+        /* ── VARIANTES (talla / color) ── */
+        function addToCartFromButton(button) {
+            const row = button.closest('tr');
+            chooseVariantAndAdd({
+                id: row.dataset.id, name: row.dataset.name, model: row.dataset.model,
+                size: row.dataset.size, color: row.dataset.color,
+                price: Number(row.dataset.price || 0), stock: Number(row.dataset.stock || 0),
+                barcode: row.dataset.barcode || ''
+            });
+        }
+
+        function chooseVariantAndAdd(product) {
+            const variants = (VARIANTS[String(product.id)] || []).filter(v => v.stock > 0);
+            if (!variants.length) { addProductToCart(product, null); return; }
+            if (variants.length === 1) { addProductToCart(product, variants[0]); return; }
+            pendingProduct = product;
+            document.getElementById('variantModalTitle').textContent = `Elige talla y color — ${product.name}`;
+            const box = document.getElementById('variantOptions');
+            box.innerHTML = variants.map(v => {
+                const inCart = cart.find(i => String(i.id) === String(product.id) && i.variant_id === v.id);
+                const left = v.stock - (inCart ? inCart.quantity : 0);
+                return `<button type="button" class="variant-option" ${left <= 0 ? 'disabled style="opacity:.4"' : ''}
+                            onclick="pickVariant(${v.id})">
+                            <strong>Talla ${esc(v.size || '—')}</strong>
+                            ${esc(v.color || 'Sin color')}<br><span>${left} disponible(s)</span>
+                        </button>`;
+            }).join('');
+            document.getElementById('variantModal').classList.add('active');
+        }
+
+        function pickVariant(variantId) {
+            if (!pendingProduct) return;
+            const v = (VARIANTS[String(pendingProduct.id)] || []).find(x => x.id === variantId);
+            addProductToCart(pendingProduct, v || null);
+            closeVariantModal();
+        }
+
+        function closeVariantModal() {
+            document.getElementById('variantModal').classList.remove('active');
+            pendingProduct = null;
+            const input = document.getElementById('barcodeInput');
+            if (input) input.focus();
+        }
+
+        /* ── CARRITO ── */
+        function addProductToCart(product, variant) {
+            if (!product.id) return;
+            const variantId = variant ? variant.id : null;
+            const stock = variant ? Number(variant.stock) : Number(product.stock);
+            const existing = cart.find(i => String(i.id) === String(product.id) && i.variant_id === variantId);
+            if (existing) {
+                if (existing.quantity >= existing.stock) { alert('Ya alcanzaste el stock disponible'); return; }
+                existing.quantity++;
+            } else {
+                if (stock <= 0) { alert('Producto sin stock'); return; }
+                cart.push({
+                    id: product.id,
+                    variant_id: variantId,
+                    name: product.name,
+                    model: product.model,
+                    size: variant ? variant.size : product.size,
+                    color: variant ? variant.color : product.color,
+                    barcode: product.barcode,
+                    stock: stock,
+                    quantity: 1,
+                    original_price: product.price,
+                    sale_price: product.price,
+                    discount: 0
+                });
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const tbody = document.getElementById('cartTableBody');
+            tbody.innerHTML = '';
+            if (!cart.length) {
+                tbody.innerHTML = `<tr id="emptyCartRow"><td colspan="8" style="text-align:center;">No has agregado productos a la venta.</td></tr>`;
+                updateTotals();
+                return;
+            }
+            cart.forEach((item, index) => {
+                const subtotal = Number(item.sale_price) * Number(item.quantity);
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${esc(item.name)}</td>
+                    <td>${esc(item.model || '—')}</td>
+                    <td>${esc(item.size || '—')}${item.color ? ' / ' + esc(item.color) : ''}</td>
+                    <td><input type="number" min="1" max="${item.stock}" value="${item.quantity}" style="width:80px;" onchange="updateQuantity(${index}, this.value)"></td>
+                    <td><input type="number" min="0" value="${item.sale_price}" style="width:110px;" onchange="updateSalePrice(${index}, this.value)"></td>
+                    <td><input type="number" min="0" value="${item.discount}" style="width:100px;" onchange="updateDiscount(${index}, this.value)"></td>
+                    <td>${formatCOP(subtotal)}</td>
+                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItem(${index})">Quitar</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            updateTotals();
+        }
+
+        function updateQuantity(index, value) {
+            const item = cart[index];
+            let qty = parseInt(value || '1', 10);
+            if (!Number.isFinite(qty) || qty < 1) qty = 1;
+            if (qty > item.stock) { qty = item.stock; alert(`Solo hay ${item.stock} disponible(s)`); }
+            item.quantity = qty;
+            renderCart();
+        }
+
+        function updateSalePrice(index, value) {
+            const item = cart[index];
+            let price = Number(value || 0);
+            if (!Number.isFinite(price) || price < 0) price = 0;
+            if (price > item.original_price) price = item.original_price;
+            item.sale_price = price;
+            item.discount = item.original_price - price;
+            renderCart();
+        }
+
+        function updateDiscount(index, value) {
+            const item = cart[index];
+            let discount = Number(value || 0);
+            if (!Number.isFinite(discount) || discount < 0) discount = 0;
+            if (discount > item.original_price) discount = item.original_price;
+            item.discount = discount;
+            item.sale_price = item.original_price - discount;
+            renderCart();
+        }
+
+        function removeItem(index) { cart.splice(index, 1); renderCart(); }
+
+        function clearCart() {
+            if (cart.length && !confirmClear()) return;
+            cart = [];
+            renderCart();
+            const input = document.getElementById('barcodeInput');
+            if (input) input.focus();
+        }
+        function confirmClear() { return window.confirm('¿Vaciar la venta actual?'); }
+
+        /* ── TOTALES ── */
+        function cartPayload() {
+            return cart.map(item => ({
+                product_id: parseInt(item.id, 10),
+                variant_id: item.variant_id,
+                quantity: parseInt(item.quantity, 10),
+                sale_price: parseFloat(item.sale_price)
+            }));
+        }
+
+        function updateTotals() {
+            let subtotal = 0, total = 0;
+            cart.forEach(item => {
+                subtotal += item.original_price * item.quantity;
+                total += item.sale_price * item.quantity;
+            });
+            const discountTotal = subtotal - total;
+            document.getElementById('subtotalValue').textContent = formatCOP(subtotal);
+            document.getElementById('discountValue').textContent = formatCOP(discountTotal);
+            document.getElementById('totalValue').textContent = formatCOP(total);
+            document.getElementById('saleSubtotalInput').value = subtotal;
+            document.getElementById('saleDiscountTotalInput').value = discountTotal;
+            document.getElementById('saleTotalInput').value = total;
+            document.getElementById('saleItemsJson').value = JSON.stringify(cartPayload());
+        }
+
+        /* ── WOMPI / SUBMIT ── */
+        async function prepareSaleData(event) {
+            event.preventDefault();
+            updateTotals();
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            if (!cart.length) { alert('Agrega productos'); return; }
+            if (!paymentMethod) { alert('Selecciona método de pago'); return; }
+
+            const submitBtn = document.getElementById('submitSaleBtn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Procesando...';
+
+            if (!WOMPI_METHODS.includes(paymentMethod)) {
+                document.getElementById('saleForm').submit();   // el botón queda bloqueado: evita ventas dobles
+                return;
+            }
+            try {
+                const response = await fetch(document.getElementById('createCheckoutUrl').value, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer_name: document.getElementById('customerName').value,
+                        customer_phone: document.getElementById('customerPhone').value,
+                        payment_method: paymentMethod,
+                        sale_note: document.getElementById('saleNote').value,
+                        items: cartPayload()
+                    })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || !data.ok) { alert(data.message || 'Error iniciando pago'); return; }
+                if (!data.checkout_url) { alert('Wompi no devolvió URL'); return; }
+                window.location.href = data.checkout_url;
+                return;
+            } catch (error) {
+                console.error(error);
+                alert('Error conectando con Wompi');
+            }
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Finalizar venta';
+        }
+
+        /* ── RECIBO ── */
+        function fillReceipt(data) {
+            const set = (id, v) => { document.getElementById(id).textContent = v; };
+            set('receiptNumber', data.number || '(vista previa)');
+            set('receiptCustomer', data.customer || 'Consumidor final');
+            set('receiptPhone', data.phone || '—');
+            set('receiptPayment', data.payment || '—');
+            set('receiptDate', data.date || '—');
+            const list = document.getElementById('receiptTableBody');
+            list.innerHTML = '';
+            let subtotal = 0, total = 0, units = 0;
+            data.items.forEach(item => {
+                const qty = Number(item.quantity || 0);
+                const original = Number(item.original_price || 0) * qty;
+                const sale = Number(item.sale_price || 0) * qty;
+                subtotal += original; total += sale; units += qty;
+                const variant = [item.size ? 'Talla ' + item.size : '', item.color].filter(Boolean).join(' · ');
+                const discounted = Number(item.original_price) > Number(item.sale_price);
+                const row = document.createElement('div');
+                row.className = 'rcpt-item';
+                row.innerHTML = `
+                    <div>
+                        <span class="rcpt-item-name">${esc(item.name)}${item.model ? ' ' + esc(item.model) : ''}</span>
+                        ${variant ? `<span class="rcpt-item-sub">${esc(variant)}</span>` : ''}
+                        <span class="rcpt-item-sub">${qty} × ${formatCOP(item.sale_price)}${discounted ? `<span class="rcpt-item-old">${formatCOP(item.original_price)}</span>` : ''}</span>
+                    </div>
+                    <div class="rcpt-item-total">${formatCOP(sale)}</div>`;
+                list.appendChild(row);
+            });
+            const discount = Number(data.discount ?? (subtotal - total));
+            set('receiptCount', units === 1 ? '1 artículo' : units + ' artículos');
+            set('receiptSubtotal', formatCOP(data.subtotal ?? subtotal));
+            set('receiptDiscount', discount > 0 ? '− ' + formatCOP(discount) : formatCOP(0));
+            document.getElementById('receiptDiscountRow').style.display = discount > 0 ? '' : 'none';
+            set('receiptTotal', formatCOP(data.total ?? total));
+            window.__lastReceipt = Object.assign({}, data, {
+                subtotal: Number(data.subtotal ?? subtotal), discount: discount, total: Number(data.total ?? total), units: units
+            });
+            document.getElementById('receiptModal').classList.add('active');
+        }
+
+        function printReceiptPreview() {
+            if (!cart.length) { alert('Agrega productos'); return; }
+            const method = document.getElementById('paymentMethod').value;
+            fillReceipt({
+                customer: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                payment: PAYMENT_LABELS[method] || method,
+                date: new Date().toLocaleString('es-CO'),
+                seller: {{ (current_username or '')|tojson }},
+                items: cart
+            });
+        }
+
+        function showServerReceipt(r) {
+            fillReceipt({
+                number: r.receipt_number,
+                customer: r.customer_name,
+                phone: r.customer_phone,
+                payment: r.payment_label,
+                date: r.fecha ? new Date(r.fecha).toLocaleString('es-CO') : '—',
+                seller: r.seller,
+                subtotal: r.subtotal, discount: r.discount_total, total: r.total,
+                items: (r.items || []).map(i => ({
+                    name: i.product_name, model: i.product_model, size: i.product_size, color: i.product_color,
+                    quantity: i.quantity, original_price: i.original_price, sale_price: i.sale_price
+                }))
+            });
+        }
+
+        /* ── RECIBO PARA MINI IMPRESORA TÉRMICA (PNG blanco y negro, 203 dpi) ── */
+        const RECEIPT_STORE = {{ {"name": (store.name or current_business_name or ""), "nit": store.nit or "", "address": store.address or "", "phone": store.phone or ""}|tojson }};
+
+        function buildThermalReceipt(data, widthMm) {
+            const DPMM = 203 / 25.4;
+            const W = Math.round(widthMm * DPMM);
+            const M = Math.round(2 * DPMM);                   // margen lateral 2 mm
+            const inner = W - 2 * M;
+            const base = Math.max(20, Math.round(W / 17));    // tamaño de letra base según el ancho
+            const font = (px, bold) => `${bold ? '700' : '400'} ${Math.round(px)}px Arial, Helvetica, sans-serif`;
+            const nb = t => String(t ?? '').replace(/ /g, ' ');
+            const ops = [];                                     // primero se mide, luego se dibuja
+            let y = M;
+            const measure = document.createElement('canvas').getContext('2d');
+            function wrap(text, px, bold, maxW) {
+                measure.font = font(px, bold);
+                const words = String(text || '').split(/ +/);
+                const lines = []; let line = '';
+                for (const w of words) {
+                    const t = line ? line + ' ' + w : w;
+                    if (measure.measureText(t).width <= maxW || !line) line = t; else { lines.push(line); line = w; }
+                }
+                if (line) lines.push(line);
+                return lines;
+            }
+            function text(t, opt = {}) {
+                const px = base * (opt.size || 1), bold = !!opt.bold, align = opt.align || 'left';
+                for (const line of wrap(t, px, bold, inner)) {
+                    ops.push({ k: 't', t: line, x: align === 'center' ? W / 2 : M, y, px, bold, align });
+                    y += Math.round(px * 1.3);
+                }
+            }
+            function pair(left, right, opt = {}) {
+                const px = base * (opt.size || 1), bold = !!opt.bold;
+                measure.font = font(px, bold);
+                const rw = measure.measureText(right).width;
+                const lines = wrap(left, px, bold, inner - rw - base);
+                lines.forEach((line, i) => {
+                    ops.push({ k: 't', t: line, x: M, y, px, bold, align: 'left' });
+                    if (i === 0) ops.push({ k: 't', t: right, x: W - M, y, px, bold, align: 'right' });
+                    y += Math.round(px * 1.3);
+                });
+            }
+            const gap = (f = 0.5) => { y += Math.round(base * f); };
+            const dashed = () => { gap(0.3); ops.push({ k: 'd', y }); gap(0.6); };
+
+            // Encabezado
+            text(RECEIPT_STORE.name || 'Mi tienda', { size: 1.55, bold: true, align: 'center' });
+            const info = [RECEIPT_STORE.nit && 'NIT ' + RECEIPT_STORE.nit, RECEIPT_STORE.address, RECEIPT_STORE.phone && 'Tel. ' + RECEIPT_STORE.phone].filter(Boolean);
+            info.forEach(t => text(t, { size: 0.85, align: 'center' }));
+            gap(0.3);
+            text('RECIBO DE COMPRA', { size: 0.95, bold: true, align: 'center' });
+            dashed();
+            pair('Recibo', nb(data.number || '(vista previa)'), { size: 0.9 });
+            pair('Fecha', nb(data.date || '—'), { size: 0.9 });
+            pair('Cliente', data.customer || 'Consumidor final', { size: 0.9 });
+            if (data.phone) pair('Teléfono', nb(data.phone), { size: 0.9 });
+            pair('Pago', data.payment || '—', { size: 0.9 });
+            dashed();
+            // Productos
+            (data.items || []).forEach(item => {
+                const qty = Number(item.quantity || 0);
+                text(item.name + (item.model ? ' ' + item.model : ''), { bold: true });
+                const variant = [item.size ? 'Talla ' + item.size : '', item.color].filter(Boolean).join(' · ');
+                if (variant) text(variant, { size: 0.85 });
+                pair(qty + ' x ' + nb(formatCOP(item.sale_price)), nb(formatCOP(qty * Number(item.sale_price || 0))), { size: 0.9 });
+                if (Number(item.original_price) > Number(item.sale_price)) text('Antes ' + nb(formatCOP(item.original_price)) + ' c/u', { size: 0.8 });
+                gap(0.35);
+            });
+            text((data.units === 1 ? '1 artículo' : (data.units || 0) + ' artículos'), { size: 0.8, align: 'center' });
+            dashed();
+            pair('Subtotal', nb(formatCOP(data.subtotal)));
+            if (data.discount > 0) pair('Descuento', nb('- ' + formatCOP(data.discount)));
+            gap(0.4);
+            // Total en recuadro negro con letra blanca
+            const totalPx = base * 1.45, boxH = Math.round(totalPx * 1.9);
+            ops.push({ k: 'box', y, h: boxH, label: 'TOTAL', value: nb(formatCOP(data.total)), px: totalPx });
+            y += boxH;
+            gap(0.9);
+            text('¡Gracias por tu compra!', { size: 1.1, bold: true, align: 'center' });
+            text('Conserva este recibo para cambios o devoluciones.', { size: 0.8, align: 'center' });
+            gap(1.6);                                           // espacio para cortar el papel
+
+            const canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = y;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, y);
+            ctx.fillStyle = '#000'; ctx.textBaseline = 'top';
+            for (const o of ops) {
+                if (o.k === 't') { ctx.font = font(o.px, o.bold); ctx.textAlign = o.align; ctx.fillText(o.t, o.x, o.y); }
+                else if (o.k === 'd') { for (let x = M; x < W - M; x += 14) ctx.fillRect(x, o.y, 8, 2); }
+                else if (o.k === 'box') {
+                    ctx.fillRect(M, o.y, inner, o.h);
+                    ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle';
+                    ctx.font = font(base, true); ctx.textAlign = 'left'; ctx.fillText(o.label, M + base * 0.6, o.y + o.h / 2);
+                    ctx.font = font(o.px, true); ctx.textAlign = 'right'; ctx.fillText(o.value, W - M - base * 0.6, o.y + o.h / 2);
+                    ctx.fillStyle = '#000'; ctx.textBaseline = 'top';
+                }
+            }
+            // blanco y negro puro (la térmica no imprime grises)
+            const img = ctx.getImageData(0, 0, W, y), d = img.data;
+            for (let i = 0; i < d.length; i += 4) { const v = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) < 150 ? 0 : 255; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; }
+            ctx.putImageData(img, 0, 0);
+            return canvas;
+        }
+
+        async function thermalReceipt() {
+            const data = window.__lastReceipt;
+            if (!data) return;
+            const widthMm = Number(document.getElementById('thermalWidth').value || 48);
+            try { localStorage.setItem('stockflow_thermal_width', String(widthMm)); } catch (e) { }
+            const canvas = buildThermalReceipt(data, widthMm);
+            const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+            const name = 'recibo_' + String(data.number || 'vista-previa').replace(/[^\w-]+/g, '_') + '.png';
+            const file = new File([blob], name, { type: 'image/png' });
+            try {
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Recibo ' + (data.number || '') });
+                    return;
+                }
+            } catch (e) { if (e.name === 'AbortError') return; }
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = name;
+            document.body.appendChild(a); a.click();
+            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+        }
+        try { const w = localStorage.getItem('stockflow_thermal_width'); if (w) document.getElementById('thermalWidth').value = w; } catch (e) { }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.remove('active');
+        }
+
+        function printReceipt() {
+            const receiptContent = document.getElementById('receiptContent').innerHTML;
+            const css = document.getElementById('receiptStyles').textContent;
+            const rootCss = getComputedStyle(document.documentElement);
+            const accent = rootCss.getPropertyValue('--primary').trim() || '#3b82f6';
+            const accent2 = rootCss.getPropertyValue('--accent2').trim() || '#8b5cf6';
+            const printWindow = window.open('', '', 'width=520,height=800');
+            if (!printWindow) { alert('Permite las ventanas emergentes para imprimir.'); return; }
+            printWindow.document.write(`<!DOCTYPE html>
+                <html lang="es"><head><meta charset="utf-8"><title>Recibo ${esc(document.getElementById('receiptNumber').textContent)}</title>
+                <style>
+                    :root { --primary: ${accent}; --accent2: ${accent2}; }
+                    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                    body { margin: 0; padding: 24px; background: #f3f4f6; }
+                    @page { margin: 8mm; }
+                    @media print { body { padding: 0; background: #fff; } .rcpt { box-shadow: none !important; border: 1px solid #e5e7eb; } }
+                    ${css}
+                </style></head>
+                <body>${receiptContent}</body></html>`);
+            printWindow.document.close();
+            setTimeout(() => { printWindow.focus(); printWindow.print(); }, 350);
+        }
+
+        /* ── INIT ── */
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') { closeVariantModal(); closeReceiptModal(); }
+        });
+        ['variantModal', 'receiptModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', e => {
+                if (e.target.id === id) id === 'variantModal' ? closeVariantModal() : closeReceiptModal();
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCart();
+            if (SERVER_RECEIPT) showServerReceipt(SERVER_RECEIPT);
+            const input = document.getElementById('barcodeInput');
+            if (input) input.focus();
+        });
+    </script>
+</body>
+
+</html>

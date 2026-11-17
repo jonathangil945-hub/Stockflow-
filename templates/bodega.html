@@ -1,0 +1,1839 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario | StockFlow</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .field-group input,
+        .field-group select,
+        input,
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s ease;
+            min-height: 50px;
+        }
+
+        .field-group input::placeholder,
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--muted-2);
+        }
+
+        .field-group input:focus,
+        .field-group select:focus,
+        input:focus,
+        select:focus,
+        textarea:focus {
+            border-color: rgba(var(--primary-rgb), 0.7);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .field-group select option,
+        select option {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .field-group select optgroup,
+        select optgroup {
+            background: var(--bg-soft);
+            color: var(--primary-light);
+            font-weight: 700;
+        }
+
+        :root {
+            --bg: #0f172a;
+            --bg-soft: #111827;
+            --panel: rgba(255, 255, 255, 0.08);
+            --panel-strong: rgba(255, 255, 255, 0.12);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body.dashboard-body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.16), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(var(--accent2-rgb), 0.12), transparent 30%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-soft) 55%, var(--bg));
+            color: var(--text);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .blob {
+            position: fixed;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.22;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .blob.one {
+            top: -80px;
+            left: -60px;
+            background: var(--primary);
+        }
+
+        .blob.two {
+            right: -60px;
+            bottom: -80px;
+            background: #8b5cf6;
+        }
+
+        .dashboard-header,
+        .inventory-main,
+        .dashboard-footer {
+            position: relative;
+            z-index: 2;
+        }
+
+        .dashboard-header {
+            width: min(1180px, calc(100% - 28px));
+            margin: 16px auto 0;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: rgba(var(--surface-rgb), 0.72);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text);
+            min-width: 0;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: grid;
+            place-items: center;
+            font-size: 1.35rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.32);
+            flex-shrink: 0;
+        }
+
+        .brand-title {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .brand-title strong {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .brand-title span {
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+
+        .top-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .top-nav a {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 13px;
+            border-radius: 12px;
+            transition: 0.2s ease;
+            font-size: 0.94rem;
+        }
+
+        .top-nav a:hover {
+            color: var(--text);
+            background: rgba(var(--fg-rgb), 0.08);
+        }
+
+        .inventory-main {
+            width: min(1180px, calc(100% - 28px));
+            margin: 18px auto 34px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .inventory-top {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 18px;
+        }
+
+        .inventory-hero,
+        .inventory-card,
+        .summary-card {
+            border: 1px solid var(--border);
+            background: rgba(var(--surface-rgb), 0.62);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+        }
+
+        .inventory-hero {
+            border-radius: var(--radius-xl);
+            padding: 24px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--primary-light);
+            background: rgba(var(--primary-rgb), 0.18);
+            border: 1px solid rgba(var(--primary-rgb), 0.28);
+            border-radius: 999px;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+        }
+
+        .inventory-hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(1.7rem, 4vw, 2.5rem);
+            line-height: 1.08;
+        }
+
+        .inventory-hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+            max-width: 700px;
+            line-height: 1.65;
+        }
+
+        .summary-cards {
+            display: grid;
+            gap: 12px;
+        }
+
+        .summary-card {
+            border-radius: 18px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .summary-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            font-size: 1.2rem;
+            background: rgba(var(--fg-rgb), 0.08);
+            flex-shrink: 0;
+        }
+
+        .summary-card strong {
+            display: block;
+            font-size: 1.25rem;
+            margin-bottom: 4px;
+        }
+
+        .summary-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .inventory-card {
+            border-radius: var(--radius-xl);
+            padding: 22px;
+        }
+
+        .card-head {
+            margin-bottom: 16px;
+        }
+
+        .card-head h2 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+        }
+
+        .card-head p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.93rem;
+            line-height: 1.6;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .field-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-soft);
+        }
+
+        .field-group input,
+        .field-group select {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: rgba(var(--fg-rgb), 0.06);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s ease;
+            min-height: 50px;
+        }
+
+        .field-group input::placeholder {
+            color: var(--muted-2);
+        }
+
+        .field-group input:focus,
+        .field-group select:focus {
+            border-color: rgba(var(--primary-rgb), 0.7);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
+        }
+
+        .field-group input[readonly] {
+            opacity: 0.9;
+            cursor: not-allowed;
+        }
+
+        .filters-form {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .filter-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 10px;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 18px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            color: white;
+            font-weight: 700;
+            font-size: 0.94rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+            box-shadow: 0 12px 24px rgba(var(--primary-rgb), 0.22);
+            min-height: 48px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, var(--primary-hover), var(--accent2-hover));
+        }
+
+        .btn-secondary {
+            background: rgba(var(--fg-rgb), 0.08);
+            box-shadow: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(var(--fg-rgb), 0.12);
+        }
+
+        .camera-permission-card {
+            display: none;
+            margin-top: 14px;
+            border: 1px solid rgba(var(--primary-rgb), 0.28);
+            border-radius: 18px;
+            padding: 16px;
+            background: rgba(var(--primary-rgb), 0.10);
+        }
+
+        .camera-permission-card.active {
+            display: block;
+        }
+
+        .camera-permission-card h3 {
+            margin: 0 0 8px;
+            font-size: 1rem;
+        }
+
+        .camera-permission-card p {
+            margin: 0;
+            color: var(--primary-light);
+            line-height: 1.6;
+            font-size: 0.93rem;
+        }
+
+        .scanner-box {
+            display: none;
+            margin-top: 16px;
+            border: 1px solid rgba(var(--fg-rgb), 0.12);
+            border-radius: 22px;
+            padding: 14px;
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .scanner-box.active {
+            display: block;
+        }
+
+        .scanner-top {
+            margin-bottom: 12px;
+        }
+
+        .scanner-top h3 {
+            margin: 0 0 6px;
+            font-size: 1rem;
+        }
+
+        .scanner-top p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.55;
+            font-size: 0.92rem;
+        }
+
+        .scanner-video-wrap {
+            width: 100%;
+            max-width: 520px;
+            margin: 0 auto;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid rgba(var(--fg-rgb), 0.12);
+            position: relative;
+        }
+
+        .scanner-video {
+            width: 100%;
+            display: block;
+            background: #000;
+            aspect-ratio: 4 / 3;
+            object-fit: cover;
+        }
+
+        .scanner-overlay {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scanner-frame {
+            width: 78%;
+            max-width: 320px;
+            height: 110px;
+            border: 2px solid rgba(var(--fg-rgb), 0.95);
+            border-radius: 18px;
+            box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.18);
+        }
+
+        .scanner-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .scanner-status {
+            margin-top: 10px;
+            font-size: 0.92rem;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* PC: tabla visible, cards ocultas */
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 980px;
+            background: rgba(var(--fg-rgb), 0.02);
+            display: table;
+        }
+
+        .mobile-cards {
+            display: none;
+        }
+
+        .inventory-table thead {
+            background: rgba(var(--fg-rgb), 0.06);
+        }
+
+        .inventory-table th,
+        .inventory-table td {
+            text-align: left;
+            padding: 14px 15px;
+            border-bottom: 1px solid rgba(var(--fg-rgb), 0.08);
+            font-size: 0.94rem;
+            white-space: nowrap;
+        }
+
+        .inventory-table th {
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+
+        .inventory-table td {
+            color: var(--muted);
+        }
+
+        .inventory-table tbody tr:hover {
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 96px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .status.ok {
+            color: var(--ok-text);
+            background: rgba(34, 197, 94, 0.14);
+            border-color: rgba(34, 197, 94, 0.28);
+        }
+
+        .status.warn {
+            color: var(--warn-text);
+            background: rgba(245, 158, 11, 0.14);
+            border-color: rgba(245, 158, 11, 0.28);
+        }
+
+        .status.danger {
+            color: var(--danger-text);
+            background: rgba(239, 68, 68, 0.14);
+            border-color: rgba(239, 68, 68, 0.28);
+        }
+
+        .product-preview {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .preview-box {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            background: rgba(var(--fg-rgb), 0.04);
+            min-width: 0;
+        }
+
+        .preview-box h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .preview-box p {
+            margin: 0 0 10px;
+            color: var(--muted);
+            line-height: 1.55;
+            word-break: break-word;
+            font-size: 0.94rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .dashboard-footer {
+            width: min(1180px, calc(100% - 28px));
+            margin: 0 auto 24px;
+            text-align: center;
+            color: var(--muted-2);
+            font-size: 0.9rem;
+        }
+
+        .movement-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.62);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9999;
+        }
+
+        .movement-modal.active {
+            display: flex;
+        }
+
+        .movement-modal-content {
+            width: 100%;
+            max-width: 460px;
+            background: rgba(var(--surface-rgb), 0.98);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .movement-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .movement-modal-header h3 {
+            margin: 0;
+            font-size: 1.08rem;
+        }
+
+        .movement-close {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(var(--fg-rgb), 0.08);
+            color: var(--text);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        .movement-close:hover {
+            background: rgba(var(--fg-rgb), 0.14);
+        }
+
+        .movement-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .movement-actions .btn {
+            flex: 1;
+        }
+
+        @media (max-width: 1100px) {
+            .inventory-top {
+                grid-template-columns: 1fr;
+            }
+
+            .product-preview {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-form {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 14px;
+                gap: 12px;
+            }
+
+            .top-nav {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .top-nav a {
+                text-align: center;
+                background: rgba(var(--fg-rgb), 0.05);
+                font-size: 0.9rem;
+            }
+
+            .inventory-main,
+            .dashboard-footer {
+                width: min(100% - 16px, 1180px);
+            }
+
+            .inventory-top {
+                gap: 14px;
+            }
+
+            .inventory-card,
+            .inventory-hero {
+                padding: 16px;
+                border-radius: 20px;
+            }
+
+            .inventory-hero h1 {
+                font-size: 1.55rem;
+            }
+
+            .inventory-hero p {
+                font-size: 0.93rem;
+            }
+
+            .summary-cards {
+                gap: 10px;
+            }
+
+            .summary-card {
+                padding: 14px;
+                border-radius: 16px;
+            }
+
+            .summary-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 1rem;
+            }
+
+            .summary-card strong {
+                font-size: 1.1rem;
+            }
+
+            .summary-card p {
+                font-size: 0.88rem;
+            }
+
+            .filters-form {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .filter-actions,
+            .scanner-actions,
+            .movement-actions {
+                flex-direction: column;
+            }
+
+            .filter-actions .btn,
+            .scanner-actions .btn,
+            .movement-actions .btn {
+                width: 100%;
+            }
+
+            .table-wrap {
+                border-radius: 16px;
+                border: none;
+            }
+
+            .inventory-table {
+                display: none;
+            }
+
+            .mobile-cards {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .mobile-card {
+                background: rgba(var(--fg-rgb), 0.05);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                padding: 14px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .mobile-card h3 {
+                margin: 0;
+                font-size: 1rem;
+                color: var(--text);
+            }
+
+            .mobile-card p {
+                margin: 0;
+                font-size: 0.85rem;
+                color: var(--muted);
+            }
+
+            .mobile-card .price {
+                font-weight: bold;
+                color: #22c55e;
+            }
+
+            .mobile-card .status {
+                align-self: flex-start;
+                margin-top: 6px;
+            }
+
+            .scanner-frame {
+                width: 82%;
+                height: 95px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .dashboard-header {
+                width: min(100% - 12px, 1180px);
+                margin-top: 10px;
+                border-radius: 18px;
+            }
+
+            .inventory-main {
+                width: min(100% - 12px, 1180px);
+                margin-top: 12px;
+                gap: 12px;
+            }
+
+            .dashboard-footer {
+                width: min(100% - 12px, 1180px);
+            }
+
+            .logo {
+                width: 44px;
+                height: 44px;
+                font-size: 1.2rem;
+            }
+
+            .brand-title strong {
+                font-size: 0.94rem;
+            }
+
+            .brand-title span {
+                font-size: 0.8rem;
+            }
+
+            .top-nav {
+                grid-template-columns: 1fr;
+            }
+
+            .top-nav a {
+                padding: 11px 12px;
+            }
+
+            .inventory-card,
+            .inventory-hero {
+                padding: 14px;
+            }
+
+            .badge {
+                font-size: 0.8rem;
+                padding: 7px 11px;
+                margin-bottom: 12px;
+            }
+
+            .inventory-hero h1 {
+                font-size: 1.38rem;
+            }
+
+            .card-head h2 {
+                font-size: 1.05rem;
+            }
+
+            .card-head p,
+            .preview-box p {
+                font-size: 0.9rem;
+            }
+
+            .scanner-box {
+                padding: 12px;
+                border-radius: 18px;
+            }
+
+            .scanner-video-wrap {
+                border-radius: 14px;
+            }
+
+            .scanner-frame {
+                width: 84%;
+                height: 88px;
+                border-radius: 14px;
+            }
+
+            .preview-box {
+                padding: 14px;
+            }
+
+            .movement-modal-content {
+                padding: 16px;
+                border-radius: 18px;
+            }
+        }
+
+        .variants-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 12px;
+        }
+
+        .variant-card {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .variant-card-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .variant-card-top h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .variant-card p {
+            margin: 0 0 10px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        .variant-size-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .variant-size-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(var(--fg-rgb), 0.05);
+            border: 1px solid rgba(var(--fg-rgb), 0.06);
+            color: var(--text);
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 1100px) {
+            .variants-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== MODAL CREAR PRODUCTO ===== */
+        .create-product-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.62);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 10000;
+        }
+
+        .create-product-modal.active {
+            display: flex;
+        }
+
+        .create-product-modal-content {
+            width: 100%;
+            max-width: 720px;
+            max-height: 92vh;
+            overflow-y: auto;
+            background: rgba(var(--surface-rgb), 0.98);
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .create-product-modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .create-product-close {
+            width: 42px;
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(var(--fg-rgb), 0.08);
+            color: var(--text);
+            font-size: 1.4rem;
+            cursor: pointer;
+        }
+
+        .create-product-form {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .create-product-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        @media (max-width: 768px) {
+            .create-product-form {
+                grid-template-columns: 1fr;
+            }
+
+            .create-product-actions {
+                flex-direction: column;
+            }
+        }
+
+        .barcode-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .barcode-download-btn {
+            padding: 10px 14px;
+            min-height: auto;
+            font-size: 0.88rem;
+        }
+
+        @media (max-width: 480px) {
+            .barcode-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .barcode-btn {
+                width: 100%;
+            }
+        }
+
+        .barcode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .barcode-header h3 {
+            margin: 0;
+        }
+
+        .barcode-btn {
+            padding: 10px 14px;
+            min-height: auto;
+            font-size: 0.88rem;
+        }
+
+        /* ===== Añadidos: alertas, nav activo, historial, filas clicables ===== */
+        .alerts { display: grid; gap: 10px; margin: 0 0 18px; }
+        .alert { padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(var(--fg-rgb),.12); font-weight: 600; }
+        .alert-success { background: rgba(34,197,94,.14); color: var(--ok-text); border-color: rgba(34,197,94,.35); }
+        .alert-error   { background: rgba(239,68,68,.14); color: var(--danger-text); border-color: rgba(239,68,68,.35); }
+        .alert-warning { background: rgba(245,158,11,.14); color: var(--warn-text); border-color: rgba(245,158,11,.35); }
+        .top-nav a.active { background: rgba(var(--primary-rgb),.22); border-color: rgba(var(--primary-rgb),.45); }
+        .nav-user { opacity: .75; font-size: .85rem; align-self: center; padding: 0 6px; }
+        .inventory-table tr.row-link { cursor: pointer; }
+        .inventory-table tr.row-link:hover td { background: rgba(var(--primary-rgb),.08); }
+        .inventory-table tr.row-selected td { background: rgba(var(--primary-rgb),.14); }
+        .movement-tag { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .8rem; font-weight: 700; }
+        .movement-tag.entrada { background: rgba(34,197,94,.16); color: var(--ok-text); }
+        .movement-tag.salida  { background: rgba(239,68,68,.16); color: var(--danger-text); }
+        .movement-tag.otro    { background: rgba(148,163,184,.16); color: var(--muted); }
+        .muted { opacity: .7; }
+        .field-group textarea { min-height: 70px; resize: vertical; }
+
+        /* Código QR del producto (detalle) */
+        .qr-preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            background: #fff;
+            border-radius: 16px;
+            margin: 6px 0 10px;
+        }
+
+        .qr-preview canvas {
+            width: 190px;
+            height: 190px;
+            image-rendering: pixelated;
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=1">
+    <script src="{{ url_for('static', filename='js/theme.js') }}?v=1"></script>
+</head>
+
+<body class="dashboard-body">
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+
+    <header class="dashboard-header">
+        <a class="brand" href="{{ url_for('auth.index') }}">
+            <div class="logo">📦</div>
+            <div class="brand-title">
+                <strong>StockFlow</strong>
+                <span>Módulo de inventario</span>
+            </div>
+        </a>
+        <nav class="top-nav">
+            <a class="active" href="{{ url_for('bodega.dashboard') }}">Bodega</a>
+            {% if current_role in ['admin', 'cajero'] %}<a href="{{ url_for('cajero.dashboard') }}">Ventas</a>{% endif %}
+            {% if current_role in ['admin', 'bodega', 'cajero'] %}<a href="{{ url_for('etiquetas.page') }}">🏷️ Etiquetas</a>{% endif %}
+            {% if current_role == 'admin' %}
+            <a href="{{ url_for('reportes.dashboard') }}">Reportes</a>
+            <a href="{{ url_for('admin.users') }}">Usuarios</a>
+            {% endif %}
+            {% if is_superadmin %}<a href="{{ url_for('superadmin.stores') }}">🏬 Tiendas</a>{% endif %}
+            <a href="{{ url_for('auth.change_password') }}" title="Cambiar contraseña">👤 {{ current_username or '' }}{% if current_business_name %} · 🏪 {{ current_business_name }}{% endif %}</a>
+            <a href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+        </nav>
+    </header>
+
+    <main class="inventory-main">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="alerts">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <section class="inventory-top">
+            <div class="inventory-hero">
+                <div class="badge">📊 Control de existencias</div>
+                <h1>Inventario general</h1>
+                <p>Consulta productos, stock disponible, tallas, precios y códigos QR
+                    en tiempo real desde un solo panel.</p>
+            </div>
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <span class="summary-icon">📦</span>
+                    <div><strong>{{ total_products }}</strong>
+                        <p>Productos registrados</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-icon">👟</span>
+                    <div><strong>{{ total_units }}</strong>
+                        <p>Unidades en stock</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-icon">⚠️</span>
+                    <div><strong>{{ low_stock }}</strong>
+                        <p>Stock bajo (≤ {{ low_stock_limit }})</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-icon">⛔</span>
+                    <div><strong>{{ out_of_stock }}</strong>
+                        <p>Agotados</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="inventory-card">
+            <div class="card-head">
+                <h2>Buscar producto</h2>
+                <p>Busca por nombre, modelo, ubicación o código. En celular puedes tocar
+                    <strong>Escanear</strong> para leer el QR con la cámara.</p>
+            </div>
+            <form class="filters-form" method="GET" action="{{ url_for('bodega.dashboard') }}" id="barcodeSearchForm">
+                <div class="field-group">
+                    <label for="search">Código o nombre</label>
+                    <input type="text" id="search" name="search" placeholder="Escribe o escanea el código"
+                        value="{{ filters.search }}" autofocus autocomplete="off">
+                </div>
+                <div class="field-group">
+                    <label for="category">Categoría</label>
+                    <select id="category" name="category">
+                        <option value="">Todas</option>
+                        {% for c in categories %}
+                        <option value="{{ c }}" {% if filters.category == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="size">Talla</label>
+                    <select id="size" name="size">
+                        <option value="">Todas</option>
+                        {% for s in known_sizes %}
+                        <option value="{{ s }}" {% if filters.size == s %}selected{% endif %}>{{ s }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="stock">Estado</label>
+                    <select id="stock" name="stock">
+                        <option value="">Todos</option>
+                        <option value="available" {% if filters.stock=='available' %}selected{% endif %}>Disponible</option>
+                        <option value="low" {% if filters.stock=='low' %}selected{% endif %}>Stock bajo</option>
+                        <option value="out" {% if filters.stock=='out' %}selected{% endif %}>Agotado</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn" type="submit">Buscar →</button>
+                    <button class="btn btn-secondary" type="button" id="scanBtn">📷 Escanear</button>
+                    <button class="btn btn-secondary" type="button" onclick="openCreateProductModal()">➕ Nuevo producto</button>
+                    <a class="btn btn-secondary" href="{{ url_for('bodega.dashboard') }}">Limpiar</a>
+                </div>
+            </form>
+
+            <div id="permissionCard" class="camera-permission-card">
+                <h3>Permiso de cámara</h3>
+                <p id="permissionText">El navegador te pedirá permiso para usar la cámara. Acepta para poder escanear el
+                    código QR.</p>
+            </div>
+
+            <div id="scannerBox" class="scanner-box">
+                <div class="scanner-top">
+                    <h3>Escáner activo</h3>
+                    <p>Centra el código QR dentro del recuadro. Cuando lo detecte, la búsqueda se hará automáticamente.</p>
+                </div>
+                <div class="scanner-video-wrap">
+                    <video id="scannerVideo" class="scanner-video" autoplay playsinline muted></video>
+                    <div class="scanner-overlay">
+                        <div class="scanner-frame"></div>
+                    </div>
+                </div>
+                <div id="reader" style="display:none;width:100%;max-width:520px;margin:0 auto;"></div>
+                <div class="scanner-actions">
+                    <button class="btn btn-secondary" type="button" id="stopScanBtn">Cerrar escáner</button>
+                </div>
+                <div id="scannerStatus" class="scanner-status">Esperando permiso de cámara...</div>
+            </div>
+        </section>
+
+        {% macro status_badge(stock) -%}
+            {%- if (stock or 0) <= 0 -%}<span class="status danger">Agotado</span>
+            {%- elif stock <= low_stock_limit -%}<span class="status warn">Stock bajo</span>
+            {%- else -%}<span class="status ok">Disponible</span>{%- endif -%}
+        {%- endmacro %}
+
+        <section class="inventory-card">
+            <div class="card-head">
+                <h2>Lista de productos</h2>
+                <p>Toca un producto para ver su detalle, variantes e historial. ({{ products|length }} resultado{{ 's' if products|length != 1 }})</p>
+            </div>
+            <div class="table-wrap">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Modelo</th>
+                            <th>Categoría</th>
+                            <th>Talla</th>
+                            <th>Color</th>
+                            <th>Ubicación</th>
+                            <th>Precio</th>
+                            <th>Stock</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in products %}
+                        <tr class="row-link {% if selected_product and selected_product.id == p.id %}row-selected{% endif %}"
+                            onclick="window.location='{{ url_for('bodega.dashboard', product_id=p.id, search=filters.search or None, category=filters.category or None, size=filters.size or None, stock=filters.stock or None) }}'">
+                            <td>{{ p.barcode }}</td>
+                            <td>{{ p.name }}</td>
+                            <td>{{ p.model or '' }}</td>
+                            <td>{{ p.category or '' }}</td>
+                            <td>{{ p.size or '' }}</td>
+                            <td>{{ p.color or '' }}</td>
+                            <td>{{ p.location or 'Sin ubicación' }}</td>
+                            <td>${{ "{:,.0f}".format(p.price or 0).replace(",", ".") }}</td>
+                            <td>{{ p.stock }}</td>
+                            <td>{{ status_badge(p.stock) }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="10" style="text-align:center;">No se encontraron productos.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div class="mobile-cards">
+                    {% for p in products %}
+                    <a class="mobile-card" style="display:block; color:inherit; text-decoration:none;"
+                        href="{{ url_for('bodega.dashboard', product_id=p.id, search=filters.search or None) }}#detalle">
+                        <h3>{{ p.name }}</h3>
+                        <p><strong>Código:</strong> {{ p.barcode }}</p>
+                        <p><strong>Modelo:</strong> {{ p.model or '—' }}</p>
+                        <p><strong>Talla:</strong> {{ p.size or '—' }}</p>
+                        <p><strong>Color:</strong> {{ p.color or '—' }}</p>
+                        <p><strong>Ubicación:</strong> {{ p.location or 'Sin ubicación' }}</p>
+                        <p class="price">${{ "{:,.0f}".format(p.price or 0).replace(",", ".") }}</p>
+                        <p><strong>Stock:</strong> {{ p.stock }}</p>
+                        {{ status_badge(p.stock) }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="inventory-card" id="detalle">
+            <div class="card-head">
+                <h2>Detalle rápido del producto</h2>
+                <p>Información completa del producto seleccionado.</p>
+            </div>
+
+            {% if selected_product %}
+            {% set sp = selected_product %}
+            {% set sv = sp.selected_variant %}
+            <div class="product-preview">
+                <div class="preview-box">
+                    <h3>👟 {{ sp.name }}</h3>
+                    <p><strong>Código:</strong> {{ sp.barcode }}</p>
+                    <p><strong>Modelo:</strong> {{ sp.model or '—' }}</p>
+                    <p><strong>Categoría:</strong> {{ sp.category or '—' }}</p>
+                    <p><strong>Color seleccionado:</strong> {{ sv.color if sv else (sp.color or '—') }}</p>
+                    <p><strong>Talla seleccionada:</strong> {{ sv.size if sv else (sp.size or '—') }}</p>
+                    <p><strong>Tallas disponibles:</strong> {{ sp.sizes_display or '—' }}</p>
+                    <p><strong>Colores disponibles:</strong> {{ sp.colors_display or '—' }}</p>
+                    <p><strong>Ubicación:</strong>
+                        {% if sv and sv.location %}{{ sv.location }}{% else %}{{ sp.location or 'Sin ubicación' }}{% endif %}
+                    </p>
+                    <p><strong>Precio:</strong> ${{ "{:,.0f}".format(sp.price or 0).replace(",", ".") }}</p>
+                    <p><strong>Stock total:</strong> {{ sp.stock }}</p>
+                    {% if sv %}<p><strong>Stock de la variante:</strong> {{ sv.stock }}</p>{% endif %}
+                    <p><strong>Estado:</strong> {{ status_badge(sv.stock if sv else sp.stock) }}</p>
+                </div>
+
+                <div class="preview-box">
+                    <div class="barcode-header">
+                        <h3>Código QR</h3>
+                        <button type="button" class="btn btn-secondary barcode-btn"
+                            data-qr-download="{{ sp.barcode }}" data-qr-name="{{ sp.name }}">⬇ Descargar QR</button>
+                        <a href="{{ url_for('etiquetas.page', product_id=sp.id) }}"
+                            class="btn btn-secondary barcode-btn">🏷️ Etiqueta</a>
+                    </div>
+                    <div class="qr-preview">
+                        <canvas data-qr="{{ sp.barcode }}" data-qr-size="200" aria-label="Código QR del producto"></canvas>
+                    </div>
+                    <p><strong>Código:</strong> {{ sp.barcode }}</p>
+                </div>
+
+                <div class="preview-box">
+                    <h3>Acciones rápidas</h3>
+                    <div class="quick-actions">
+                        <button type="button" class="btn"
+                            onclick='openMovementModal("entrada", {{ sp.id }}, {{ sp.name|tojson }}, {{ (sv.size if sv else "")|tojson }}, {{ (sv.color if sv else "")|tojson }})'>
+                            Registrar entrada
+                        </button>
+                        <button type="button" class="btn btn-secondary"
+                            onclick='openMovementModal("salida", {{ sp.id }}, {{ sp.name|tojson }}, {{ (sv.size if sv else "")|tojson }}, {{ (sv.color if sv else "")|tojson }})'>
+                            Registrar salida
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="openEditProductModal()">
+                            ✏️ Editar producto
+                        </button>
+                        <a class="btn btn-secondary" href="{{ url_for('etiquetas.page', product_id=sp.id, variant_id=sv.id if sv else None) }}">
+                            🏷️ Etiqueta {{ 'de esta talla' if sv else 'del producto' }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-head" style="margin-top:22px;">
+                <h2>Variantes de esta referencia</h2>
+                <p>Cada color con sus tallas y stock. Toca una talla para registrar movimientos sobre ella.</p>
+            </div>
+
+            {% if sp.variant_groups %}
+            <div class="variants-grid">
+                {% for group in sp.variant_groups %}
+                <div class="variant-card {% if sv and sv.color == group['color'] %}active{% endif %}">
+                    <div class="variant-card-top">
+                        <h3>Color: {{ group["color"] }}</h3>
+                        {{ status_badge(group['stock_total']) }}
+                    </div>
+                    <p><strong>Stock total de este color:</strong> {{ group["stock_total"] }}</p>
+                    <p><strong>Ubicación:</strong> {{ group["location"] or 'Sin ubicación' }}</p>
+                    <p><strong>Tallas:</strong> {{ group["sizes_display"] or '—' }}</p>
+                    <div class="variant-size-list">
+                        {% for item in group["items"] %}
+                        <a class="variant-size-item" style="color:inherit; text-decoration:none;
+                            {% if sv and sv.id == item['id'] %}outline:2px solid rgba(59,130,246,.8); border-radius:10px;{% endif %}"
+                            href="{{ url_for('bodega.dashboard', product_id=sp.id, variant_id=item['id'], search=filters.search or None) }}#detalle">
+                            <span><strong>Talla {{ item["size"] }}</strong></span>
+                            <span>{{ item["stock"] }} unidades</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="preview-box" style="margin-top:12px;">
+                <h3>Sin variantes registradas</h3>
+                <p>Registra una <strong>entrada</strong> indicando talla y color para crear la primera variante.</p>
+            </div>
+            {% endif %}
+
+            <div class="card-head" style="margin-top:22px;">
+                <h2>Últimos movimientos</h2>
+                <p>Entradas, salidas y ventas de este producto.</p>
+            </div>
+            <div class="table-wrap">
+                <table class="inventory-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th><th>Tipo</th><th>Cant.</th><th>Talla</th><th>Color</th>
+                            <th>Ubicación</th><th>Usuario</th><th>Nota</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in movements %}
+                        {% set t = (m.movement_type or '')|lower %}
+                        <tr>
+                            <td>{{ m.created_at.strftime('%d/%m/%Y %H:%M') if m.created_at else '—' }}</td>
+                            <td><span class="movement-tag {{ t if t in ['entrada','salida'] else 'otro' }}">{{ m.movement_type }}</span></td>
+                            <td>{{ m.quantity }}</td>
+                            <td>{{ m.size or '—' }}</td>
+                            <td>{{ m.color or '—' }}</td>
+                            <td>{{ m.location or '—' }}</td>
+                            <td>{{ m.username or '—' }}</td>
+                            <td class="muted">{{ m.note or '' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="8" style="text-align:center;">Sin movimientos registrados.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal movimiento de stock -->
+            <div id="movementModal" class="movement-modal">
+                <div class="movement-modal-content">
+                    <div class="movement-modal-header">
+                        <h3 id="movementModalTitle">Movimiento de inventario</h3>
+                        <button type="button" class="movement-close" onclick="closeMovementModal()">×</button>
+                    </div>
+                    <form id="movementForm" method="POST" action="{{ url_for('bodega.move_product_stock', product_id=sp.id) }}">
+                        <input type="hidden" name="movement_type" id="movementType">
+                        <div class="field-group">
+                            <label for="movementProductName">Producto</label>
+                            <input type="text" id="movementProductName" readonly>
+                        </div>
+                        <div class="field-group">
+                            <label for="size_variant">Talla</label>
+                            <input type="text" id="size_variant" name="size" list="sizesList" required
+                                placeholder="Ej: 40" autocomplete="off">
+                        </div>
+                        <div class="field-group">
+                            <label for="color_variant">Color</label>
+                            <input type="text" id="color_variant" name="color" list="colorsList" required
+                                placeholder="Ej: Negro" autocomplete="off">
+                        </div>
+                        <div class="field-group">
+                            <label for="quantity">Cantidad</label>
+                            <input type="number" id="quantity" name="quantity" min="1" step="1" required placeholder="Ej: 10">
+                        </div>
+                        <div class="field-group" id="locationGroup">
+                            <label for="location">Ubicación</label>
+                            <input type="text" id="location" name="location" placeholder="Ej: Bodega Norte, estante A-3">
+                        </div>
+                        <div class="field-group">
+                            <label for="note">Nota (opcional)</label>
+                            <input type="text" id="note" name="note" placeholder="Ej: Pedido proveedor #123, par defectuoso...">
+                        </div>
+                        <div class="movement-actions">
+                            <button type="submit" class="btn" id="movementSubmitBtn">Guardar</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeMovementModal()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal editar producto -->
+            <div id="editProductModal" class="create-product-modal">
+                <div class="create-product-modal-content">
+                    <div class="create-product-modal-header">
+                        <h3>Editar producto</h3>
+                        <button type="button" class="create-product-close" onclick="closeEditProductModal()">×</button>
+                    </div>
+                    <form class="create-product-form" method="POST" action="{{ url_for('bodega.edit_product', product_id=sp.id) }}">
+                        <div class="field-group"><label>Nombre</label><input type="text" name="name" value="{{ sp.name }}" required></div>
+                        <div class="field-group"><label>Modelo</label><input type="text" name="model" value="{{ sp.model or '' }}"></div>
+                        <div class="field-group">
+                            <label>Categoría</label>
+                            <input type="text" name="category" list="categoriesList" value="{{ sp.category or '' }}">
+                        </div>
+                        <div class="field-group"><label>Precio</label>
+                            <input type="number" name="price" min="0" step="any" value="{{ '%.0f'|format(sp.price or 0) }}"></div>
+                        <p class="muted" style="grid-column:1/-1; margin:0;">El stock se modifica con entradas y salidas para que quede en el historial.</p>
+                        <div class="create-product-actions">
+                            <button type="submit" class="btn">Guardar cambios</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeEditProductModal()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% else %}
+            <div class="preview-box">
+                <h3>No hay productos para mostrar</h3>
+                <p>Crea tu primer producto con el botón <strong>➕ Nuevo producto</strong>.</p>
+            </div>
+            {% endif %}
+
+            <!-- Modal crear producto -->
+            <div id="createProductModal" class="create-product-modal">
+                <div class="create-product-modal-content">
+                    <div class="create-product-modal-header">
+                        <h3>Agregar producto</h3>
+                        <button type="button" class="create-product-close" onclick="closeCreateProductModal()">×</button>
+                    </div>
+                    <form class="create-product-form" method="POST" action="{{ url_for('bodega.create_product') }}">
+                        <div class="field-group"><label>Nombre *</label><input type="text" name="name" required></div>
+                        <div class="field-group"><label>Modelo</label><input type="text" name="model"></div>
+                        <div class="field-group">
+                            <label>Categoría</label>
+                            <input type="text" name="category" list="categoriesList" value="Calzado">
+                        </div>
+                        <div class="field-group">
+                            <label>Código del producto (opcional)</label>
+                            <input type="text" name="barcode" placeholder="Vacío = se genera PROD-000123">
+                        </div>
+                        <div class="field-group"><label>Precio</label><input type="number" name="price" min="0" step="any" placeholder="Ej: 120000"></div>
+                        <div class="field-group"><label>Stock inicial</label><input type="number" name="stock" min="0" step="1" value="0"></div>
+                        <div class="field-group">
+                            <label>Talla (si hay stock inicial)</label>
+                            <input type="text" name="size" list="sizesList" autocomplete="off">
+                        </div>
+                        <div class="field-group">
+                            <label>Color (si hay stock inicial)</label>
+                            <input type="text" name="color" list="colorsList" autocomplete="off">
+                        </div>
+                        <div class="field-group"><label>Ubicación</label><input type="text" name="location" placeholder="Ej: Estante A-3"></div>
+                        <div class="create-product-actions">
+                            <button type="submit" class="btn">Guardar</button>
+                            <button type="button" class="btn btn-secondary" onclick="closeCreateProductModal()">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <datalist id="sizesList">{% for s in known_sizes %}<option value="{{ s }}">{% endfor %}</datalist>
+            <datalist id="colorsList">{% for c in known_colors %}<option value="{{ c }}">{% endfor %}</datalist>
+            <datalist id="categoriesList">{% for c in categories %}<option value="{{ c }}">{% endfor %}</datalist>
+        </section>
+
+    </main>
+
+    <footer class="dashboard-footer">
+        © <span id="year"></span> StockFlow • Sistema de Inventario
+    </footer>
+
+        <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+        <script src="{{ url_for('static', filename='js/qr_codes.js') }}?v=1"></script>
+        <script>
+            document.getElementById("year").textContent = new Date().getFullYear();
+
+            const form = document.getElementById("barcodeSearchForm");
+            const searchInput = document.getElementById("search");
+            const scanBtn = document.getElementById("scanBtn");
+            const stopScanBtn = document.getElementById("stopScanBtn");
+            const scannerBox = document.getElementById("scannerBox");
+            const video = document.getElementById("scannerVideo");
+            const scannerStatus = document.getElementById("scannerStatus");
+            const permissionCard = document.getElementById("permissionCard");
+            const permissionText = document.getElementById("permissionText");
+
+            let stream = null, scanInterval = null, barcodeDetector = null;
+
+            if (searchInput) {
+                searchInput.addEventListener("keydown", function (e) {
+                    if (e.key === "Enter") e.target.form.submit();
+                });
+            }
+
+            function setScannerStatus(message) {
+                if (scannerStatus) scannerStatus.textContent = message;
+            }
+
+            function showPermissionCard(message) {
+                if (permissionCard) permissionCard.classList.add("active");
+                if (permissionText && message) permissionText.textContent = message;
+            }
+
+            function hidePermissionCard() {
+                if (permissionCard) permissionCard.classList.remove("active");
+            }
+
+            const SCAN_FORMATS = ["qr_code"];
+            const videoWrap = video ? video.closest(".scanner-video-wrap") : null;
+            const readerDiv = document.getElementById("reader");
+            let html5Scanner = null, html5Running = false, scanHandled = false;
+
+            // Código leído (QR del producto o QR de talla "CODIGO#V12")
+            function handleScannedCode(raw) {
+                const code = (raw || "").trim();
+                if (!code || scanHandled) return;
+                scanHandled = true;
+                setScannerStatus("Código detectado: " + code + ". Buscando producto...");
+                searchInput.value = code;
+                stopScanner(false);
+                form.submit();
+            }
+
+            async function nativeDetector() {
+                if (!("BarcodeDetector" in window)) return null;
+                try {
+                    const supported = await BarcodeDetector.getSupportedFormats();
+                    const formats = SCAN_FORMATS.filter(f => supported.includes(f));
+                    if (!formats.includes("qr_code")) return null;   // sin QR → usar el lector alterno
+                    return new BarcodeDetector({ formats });
+                } catch (e) { return null; }
+            }
+
+            async function startScanner() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    alert("Tu navegador no permite usar la cámara. Abre la página con https o desde localhost, o usa un lector USB."); return;
+                }
+                await stopScanner();
+                scanHandled = false;
+                showPermissionCard("El navegador te pedirá permiso para usar la cámara. Acepta para poder escanear el código QR.");
+                scannerBox.classList.add("active");
+                setScannerStatus("Solicitando permiso de cámara...");
+
+                barcodeDetector = await nativeDetector();
+                if (barcodeDetector) return startNativeScanner();
+                if (typeof Html5Qrcode !== "undefined") return startHtml5Scanner();
+                hidePermissionCard();
+                setScannerStatus("No se pudo cargar el lector de cámara (revisa la conexión a internet). Puedes escribir el código o usar un lector USB.");
+            }
+
+            async function startNativeScanner() {
+                if (videoWrap) videoWrap.style.display = "";
+                if (readerDiv) readerDiv.style.display = "none";
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { ideal: "environment" } }, audio: false
+                    });
+                    hidePermissionCard();
+                    setScannerStatus("Cámara activa. Apunta al código QR.");
+                    video.srcObject = stream;
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) await playPromise;
+                    scanInterval = setInterval(async () => {
+                        try {
+                            if (!barcodeDetector || video.readyState < 2) return;
+                            const codes = await barcodeDetector.detect(video);
+                            if (codes.length > 0) handleScannedCode(codes[0].rawValue);
+                        } catch (err) { console.error("Error detectando código:", err); }
+                    }, 300);
+                } catch (error) { cameraError(error); }
+            }
+
+            async function startHtml5Scanner() {
+                if (videoWrap) videoWrap.style.display = "none";
+                if (readerDiv) readerDiv.style.display = "block";
+                try {
+                    if (!html5Scanner) html5Scanner = new Html5Qrcode("reader", { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false });
+                    await html5Scanner.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 10,
+                            qrbox: (w, h) => {
+                                const side = Math.max(Math.floor(Math.min(w, h) * 0.7), 160);
+                                return { width: side, height: side };
+                            }
+                        },
+                        (decodedText) => handleScannedCode(decodedText),
+                        () => { }
+                    );
+                    html5Running = true;
+                    hidePermissionCard();
+                    setScannerStatus("Cámara activa. Apunta al código QR.");
+                } catch (error) { cameraError(error); }
+            }
+
+            function cameraError(error) {
+                console.error(error);
+                const name = (error && error.name) || String(error || "");
+                let message = "No se pudo abrir la cámara para escanear.";
+                if (/NotAllowed|Permission/i.test(name)) {
+                    message = "Permiso de cámara bloqueado. Debes permitir la cámara en el navegador para usar el escáner.";
+                } else if (/NotFound/i.test(name)) {
+                    message = "No se encontró una cámara disponible en este dispositivo.";
+                } else if (/NotReadable/i.test(name)) {
+                    message = "La cámara está siendo usada por otra aplicación o no se pudo iniciar.";
+                }
+                showPermissionCard(message);
+                setScannerStatus(message);
+            }
+
+            async function stopScanner(hideBox = true) {
+                if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+                if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
+                if (video) { video.pause(); video.srcObject = null; }
+                if (html5Scanner && html5Running) {
+                    html5Running = false;
+                    try { await html5Scanner.stop(); html5Scanner.clear(); } catch (e) { console.error(e); }
+                }
+                if (hideBox && scannerBox) scannerBox.classList.remove("active");
+            }
+
+            if (scanBtn) scanBtn.addEventListener("click", startScanner);
+            if (stopScanBtn) stopScanBtn.addEventListener("click", function () { stopScanner(true); hidePermissionCard(); });
+
+            window.addEventListener("beforeunload", function () { stopScanner(true); });
+            document.addEventListener("visibilitychange", function () { if (document.hidden) stopScanner(true); });
+
+            function openMovementModal(type, productId, productName, presetSize = "", presetColor = "") {
+                const modal = document.getElementById("movementModal");
+                if (!modal) return;
+                document.getElementById("movementType").value = type;
+                document.getElementById("movementProductName").value = productName;
+                document.getElementById("size_variant").value = presetSize || "";
+                document.getElementById("color_variant").value = presetColor || "";
+                document.getElementById("quantity").value = "";
+                document.getElementById("note").value = "";
+                const locationInput = document.getElementById("location");
+                const locationGroup = document.getElementById("locationGroup");
+                if (locationInput) locationInput.value = "";
+                // En una salida la ubicación es la de la variante: no se pide
+                if (locationGroup) locationGroup.style.display = type === "entrada" ? "" : "none";
+                const title = document.getElementById("movementModalTitle");
+                const submitBtn = document.getElementById("movementSubmitBtn");
+                title.textContent = type === "entrada" ? "Registrar entrada" : "Registrar salida";
+                submitBtn.textContent = type === "entrada" ? "Guardar entrada" : "Guardar salida";
+                modal.classList.add("active");
+                (presetSize ? document.getElementById("quantity") : document.getElementById("size_variant")).focus();
+            }
+
+            function closeMovementModal() {
+                const modal = document.getElementById("movementModal");
+                if (modal) modal.classList.remove("active");
+            }
+
+            function openEditProductModal() {
+                const m = document.getElementById("editProductModal");
+                if (m) m.classList.add("active");
+            }
+            function closeEditProductModal() {
+                const m = document.getElementById("editProductModal");
+                if (m) m.classList.remove("active");
+            }
+
+            // Evitar doble envío de formularios (doble clic = doble movimiento)
+            document.querySelectorAll("form[method='POST'], form[method='post']").forEach(f => {
+                f.addEventListener("submit", () => {
+                    const btn = f.querySelector("button[type='submit']");
+                    if (btn) { btn.disabled = true; btn.textContent = "Guardando..."; }
+                });
+            });
+
+            function openCreateProductModal() { document.getElementById("createProductModal").classList.add("active"); }
+            function closeCreateProductModal() { document.getElementById("createProductModal").classList.remove("active"); }
+
+            /* FIX 4: un solo listener de Escape para ambos modales.
+               El original tenía dos addEventListener separados — el segundo
+               sobreescribía al primero y movementModal nunca cerraba con Escape. */
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") {
+                    closeMovementModal();
+                    closeCreateProductModal();
+                    closeEditProductModal();
+                }
+            });
+
+            const movementModal = document.getElementById("movementModal");
+            if (movementModal) {
+                movementModal.addEventListener("click", function (e) {
+                    if (e.target.id === "movementModal") closeMovementModal();
+                });
+            }
+
+            document.getElementById("createProductModal").addEventListener("click", function (e) {
+                if (e.target.id === "createProductModal") closeCreateProductModal();
+            });
+            const editModal = document.getElementById("editProductModal");
+            if (editModal) editModal.addEventListener("click", function (e) {
+                if (e.target.id === "editProductModal") closeEditProductModal();
+            });
+        </script>
+</body>
+
+</html>

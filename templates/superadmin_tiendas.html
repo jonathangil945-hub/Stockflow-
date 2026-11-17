@@ -1,0 +1,80 @@
+{% extends "base_simple.html" %}
+{% block title %}Tiendas{% endblock %}
+{% block subtitle %}Súper administrador • Tiendas{% endblock %}
+{% block styles %}
+.stores { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+.store { background: rgba(var(--fg-rgb),.05); border: 1px solid var(--border); border-radius: 18px; padding: 18px; display: grid; gap: 10px; }
+.store.off { opacity: .6; }
+.store h3 { margin: 0; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: rgba(var(--surface-rgb),.5); border-radius: 12px; padding: 10px; text-align: center; }
+.stat strong { display: block; font-size: 1.15rem; }
+.stat span { color: var(--muted); font-size: .75rem; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+details.edit { border-top: 1px solid var(--border); padding-top: 10px; }
+details.edit form { display: grid; gap: 10px; margin-top: 10px; }
+.section-title { margin: 6px 0 2px; color: var(--muted); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; grid-column: 1 / -1; }
+{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1>Tiendas</h1>
+    <p class="sub">Cada tienda tiene su propio inventario, ventas, reportes y usuarios. Los datos de una tienda nunca se mezclan con los de otra.</p>
+
+    <div class="stores">
+        {% for s in stores %}
+        <div class="store {{ '' if s.is_active else 'off' }}">
+            <h3>{{ s.name }} <span class="pill {{ 'on' if s.is_active else 'off' }}">{{ 'Activa' if s.is_active else 'Inactiva' }}</span></h3>
+            <div class="muted" style="font-size:.85rem;">
+                {% if s.nit %}NIT {{ s.nit }} • {% endif %}{% if s.phone %}{{ s.phone }} • {% endif %}Admin: {{ s.admins or 'sin administrador' }}
+            </div>
+            <div class="stats">
+                <div class="stat"><strong>{{ s.products }}</strong><span>productos</span></div>
+                <div class="stat"><strong>{{ s.units }}</strong><span>unidades</span></div>
+                <div class="stat"><strong>{{ s.users }}</strong><span>usuarios</span></div>
+                <div class="stat"><strong>{{ s.sales }}</strong><span>ventas</span></div>
+                <div class="stat" style="grid-column: span 2;"><strong>$ {{ "{:,.0f}".format(s.month_total|float).replace(",", ".") }}</strong><span>vendido este mes</span></div>
+            </div>
+            <div class="actions">
+                <a class="btn btn-sm" href="{{ url_for('superadmin.enter_store', business_id=s.id) }}">Entrar a la tienda →</a>
+            </div>
+            <details class="edit">
+                <summary class="muted">✏️ Editar datos de la tienda</summary>
+                <form method="POST" action="{{ url_for('superadmin.edit_store', business_id=s.id) }}">
+                    <label>Nombre<input name="name" value="{{ s.name }}" required></label>
+                    <label>NIT<input name="nit" value="{{ s.nit or '' }}"></label>
+                    <label>Teléfono<input name="phone" value="{{ s.phone or '' }}"></label>
+                    <label>Dirección<input name="address" value="{{ s.address or '' }}"></label>
+                    <label>Correo de la tienda<input type="email" name="email" value="{{ s.email or '' }}"></label>
+                    <label style="display:flex; gap:8px; align-items:center;">
+                        <input type="checkbox" name="is_active" style="width:auto;" {% if s.is_active %}checked{% endif %}>
+                        Tienda activa (si la desactivas, sus usuarios no pueden ingresar)
+                    </label>
+                    <button class="btn btn-secondary btn-sm" type="submit">Guardar</button>
+                </form>
+            </details>
+        </div>
+        {% else %}
+        <p class="muted">Aún no hay tiendas.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="card">
+    <h2>Nueva tienda</h2>
+    <p class="sub">Se crea la tienda vacía y su usuario administrador. Ese administrador luego crea sus cajeros y bodegueros.</p>
+    <form method="POST" action="{{ url_for('superadmin.create_store') }}" class="grid-4" autocomplete="off">
+        <div class="section-title">Datos de la tienda</div>
+        <label>Nombre *<input name="name" required minlength="2" placeholder="Ej: Calzado El Centro"></label>
+        <label>NIT<input name="nit"></label>
+        <label>Teléfono<input name="phone"></label>
+        <label>Dirección<input name="address"></label>
+        <label>Correo de la tienda<input type="email" name="email"></label>
+        <div class="section-title">Administrador de la tienda</div>
+        <label>Usuario *<input name="admin_username" required minlength="3" maxlength="40" placeholder="ej: admin_centro"></label>
+        <label>Contraseña *<input type="password" name="admin_password" required minlength="6" autocomplete="new-password"></label>
+        <label>Correo del admin<input type="email" name="admin_email" placeholder="para alertas y recuperar clave"></label>
+        <div><button class="btn" type="submit">➕ Crear tienda</button></div>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base_simple.html" %}
+{% block title %}Etiquetas{% endblock %}
+{% block subtitle %}Etiquetas QR para la mini impresora{% endblock %}
+
+{% block styles %}
+.layout { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+.prod { border: 1px solid var(--border); border-radius: 14px; padding: 10px 12px; margin-bottom: 10px; background: rgba(var(--fg-rgb),.04); }
+.prod-head .btn { white-space: nowrap; flex-shrink: 0; }
+.prod-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.chip { border: 1px solid var(--border); background: rgba(var(--primary-rgb),.12); color: var(--text); border-radius: 999px;
+        padding: 5px 10px; font: inherit; font-size: .8rem; cursor: pointer; }
+.chip:hover { background: rgba(var(--primary-rgb),.3); }
+.chip-all { background: rgba(var(--fg-rgb),.08); }
+#productList { max-height: 62vh; overflow-y: auto; padding-right: 4px; }
+.settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; }
+.checks { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.checks label { display: flex; flex-direction: row; align-items: center; gap: 6px; font-weight: 500; color: var(--text); }
+.checks input { width: auto; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+#labels { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.label-card { background: rgba(var(--fg-rgb),.05); border: 1px solid var(--border); border-radius: 14px; padding: 12px;
+              display: grid; gap: 8px; justify-items: center; }
+.label-canvas { background: #fff; border-radius: 6px; image-rendering: pixelated; box-shadow: 0 4px 14px rgba(0,0,0,.35); max-width: 100%; height: auto !important; }
+.label-info { display: grid; text-align: center; gap: 2px; font-size: .9rem; }
+.label-actions { display: flex; gap: 8px; }
+.help { background: rgba(var(--primary-rgb),.08); border: 1px solid rgba(var(--primary-rgb),.3); border-radius: 14px; padding: 14px 18px; }
+.help ol { margin: 6px 0 0; padding-left: 20px; line-height: 1.7; }
+.warn { background: rgba(245,158,11,.14); color: var(--warn-text); border: 1px solid rgba(245,158,11,.35); border-radius: 14px; padding: 10px 14px; margin-bottom: 14px; }
+{% endblock %}
+
+{% block content %}
+<div id="qrWarning" class="warn" style="display:none;">
+    No se pudo cargar el generador de QR. Revisa la conexión a internet y recarga la página.
+</div>
+
+<div class="layout">
+    <section class="card">
+        <h2>Productos</h2>
+        <p class="sub">Agrega el producto o una talla/color específica. El QR de una talla la identifica exacta al escanearla en Ventas o Bodega.</p>
+        <label>Buscar<input id="productSearch" placeholder="Nombre, modelo o código" autocomplete="off"></label>
+        <div id="productList" style="margin-top:12px;"></div>
+    </section>
+
+    <div>
+        <section class="card">
+            <h2>Formato de la etiqueta</h2>
+            <p class="sub">Todas las etiquetas usan el mismo diseño: QR a la izquierda y los datos del producto a la derecha. Elige el tamaño del rollo (ancho × alto en mm); se guarda en este navegador.</p>
+            <div class="settings">
+                <label>Tamaño del rollo
+                    <select id="labelSize">
+                        {% for w, h in label_sizes %}<option value="{{ w }}x{{ h }}">{{ w }} × {{ h }} mm</option>{% endfor %}
+                        <option value="custom">Otro tamaño…</option>
+                    </select>
+                </label>
+                <div id="customSize" style="display:none; gap:8px; grid-template-columns:1fr 1fr;" class="settings">
+                    <label>Ancho (mm)<input id="customW" type="number" min="10" max="120"></label>
+                    <label>Alto (mm)<input id="customH" type="number" min="10" max="200"></label>
+                </div>
+                <label>Resolución
+                    <select id="dpi">
+                        <option value="203">203 dpi (la mayoría, P1)</option>
+                        <option value="300">300 dpi</option>
+                    </select>
+                </label>
+            </div>
+            <div class="checks">
+                <label><input type="checkbox" id="showStore"> Nombre de la tienda</label>
+                <label><input type="checkbox" id="showName"> Producto</label>
+                <label><input type="checkbox" id="showVariant"> Talla / color</label>
+                <label><input type="checkbox" id="showPrice"> Precio</label>
+                <label><input type="checkbox" id="showCode"> Código debajo del precio</label>
+                <label><input type="checkbox" id="border"> Borde</label>
+            </div>
+        </section>
+
+        <section class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                <h2 style="margin:0;">Etiquetas (<span id="count">0</span>)</h2>
+                <button class="btn btn-secondary btn-sm" id="clearBtn" type="button">Vaciar</button>
+            </div>
+            <div class="toolbar">
+                <button class="btn" id="downloadAllBtn" type="button">⬇ Descargar todas (PNG)</button>
+                <button class="btn" id="shareBtn" type="button" style="display:none;">📤 Compartir a ToPrint</button>
+                <button class="btn btn-secondary" id="printBtn" type="button">🖨️ Imprimir desde el PC</button>
+            </div>
+            <div id="labels"></div>
+        </section>
+
+        <section class="help">
+            <strong>Cómo imprimir con la mini impresora (Label Printer P1 · app ToPrint)</strong>
+            <ol>
+                <li>Abre StockFlow en el celular (misma Wi-Fi que el PC): <code>{{ phone_url }}</code></li>
+                <li>Agrega las etiquetas y toca <strong>⬇ PNG</strong> (o <strong>Compartir</strong> si aparece) — queda en la galería/descargas.</li>
+                <li>Abre <strong>ToPrint</strong>, conecta la impresora por Bluetooth (PIN <code>0000</code>).</li>
+                <li>Crea una etiqueta del <strong>mismo tamaño del rollo</strong>, inserta <strong>Imagen</strong> y elige el PNG; ajústala a toda la etiqueta e imprime.</li>
+            </ol>
+            <p class="muted" style="margin:8px 0 0;">Las imágenes salen en blanco y negro puro a 203 dpi, que es como imprime una impresora térmica.
+                Si el QR sale pequeño o cortado, revisa que el tamaño elegido aquí sea el del rollo.</p>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script>
+    window.ETIQUETAS_DATA = {{ products|tojson }};
+    window.ETIQUETAS_STORE = {{ store_name|tojson }};
+    window.ETIQUETAS_PRESELECT = {{ preselect|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/etiquetas.js') }}?v=4"></script>
+{% endblock %}

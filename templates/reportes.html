@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reportes | StockFlow</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <!-- jsPDF + html2canvas para exportar PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --bg-soft: #111827;
+            --panel: rgba(255, 255, 255, 0.08);
+            --panel-strong: rgba(255, 255, 255, 0.12);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: #f8fafc;
+            --muted: #cbd5e1;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+            --pink: #ec4899;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.28);
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background:
+                radial-gradient(circle at top left, rgba(var(--primary-rgb), 0.16), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(var(--accent2-rgb), 0.12), transparent 30%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-soft) 55%, var(--bg));
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .blob {
+            position: fixed;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            filter: blur(90px);
+            opacity: 0.22;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .blob.one {
+            top: -80px;
+            left: -60px;
+            background: var(--primary);
+        }
+
+        .blob.two {
+            right: -60px;
+            bottom: -80px;
+            background: #8b5cf6;
+        }
+
+        /* ── HEADER ── */
+        .dashboard-header {
+            position: relative;
+            z-index: 2;
+            width: min(1180px, calc(100% - 28px));
+            margin: 16px auto 0;
+            padding: 16px 18px;
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            background: rgba(var(--surface-rgb), 0.72);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: grid;
+            place-items: center;
+            font-size: 1.35rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            box-shadow: 0 10px 25px rgba(var(--primary-rgb), 0.32);
+            flex-shrink: 0;
+        }
+
+        .brand-title strong {
+            display: block;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .brand-title span {
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+
+        .top-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .top-nav a {
+            color: var(--muted);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 13px;
+            border-radius: 12px;
+            transition: 0.2s ease;
+            font-size: 0.94rem;
+        }
+
+        .top-nav a:hover {
+            color: var(--text);
+            background: rgba(var(--fg-rgb), 0.08);
+        }
+
+        /* ── MAIN ── */
+        .reports-main {
+            position: relative;
+            z-index: 2;
+            width: min(1180px, calc(100% - 28px));
+            margin: 18px auto 34px;
+            display: grid;
+            gap: 18px;
+        }
+
+        /* ── HERO ── */
+        .reports-top {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 18px;
+        }
+
+        .reports-hero {
+            border: 1px solid var(--border);
+            background: rgba(var(--surface-rgb), 0.62);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+            border-radius: var(--radius-xl);
+            padding: 24px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: var(--primary-light);
+            background: rgba(var(--primary-rgb), 0.18);
+            border: 1px solid rgba(var(--primary-rgb), 0.28);
+            border-radius: 999px;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+        }
+
+        .reports-hero h1 {
+            margin: 0 0 10px;
+            font-size: clamp(1.7rem, 4vw, 2.5rem);
+            line-height: 1.08;
+        }
+
+        .reports-hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+            line-height: 1.65;
+        }
+
+        /* ── KPI CARDS ── */
+        .kpi-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .kpi-card {
+            border: 1px solid var(--border);
+            background: rgba(var(--surface-rgb), 0.62);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+            border-radius: 18px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            font-size: 1.2rem;
+            background: rgba(var(--fg-rgb), 0.08);
+            flex-shrink: 0;
+        }
+
+        .kpi-card strong {
+            display: block;
+            font-size: 1.25rem;
+            margin-bottom: 4px;
+        }
+
+        .kpi-card p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .kpi-card .trend {
+            font-size: 0.8rem;
+            font-weight: 700;
+            margin-top: 3px;
+        }
+
+        .trend.up {
+            color: var(--success);
+        }
+
+        .trend.down {
+            color: var(--danger);
+        }
+
+        /* ── FILTER BAR ── */
+        .report-card {
+            border: 1px solid var(--border);
+            background: rgba(var(--surface-rgb), 0.62);
+            backdrop-filter: blur(14px);
+            box-shadow: var(--shadow);
+            border-radius: var(--radius-xl);
+            padding: 22px;
+        }
+
+        .card-head {
+            margin-bottom: 16px;
+        }
+
+        .card-head h2 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+        }
+
+        .card-head p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.93rem;
+            line-height: 1.6;
+        }
+
+        .card-head-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .card-head-row h2 {
+            margin: 0;
+            font-size: 1.15rem;
+        }
+
+        .filters-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+        }
+
+        .filter-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .field-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-soft);
+        }
+
+        .field-group input,
+        .field-group select {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            outline: none;
+            transition: 0.2s ease;
+            min-height: 50px;
+        }
+
+        .field-group input::placeholder {
+            color: var(--muted-2);
+        }
+
+        .field-group input:focus,
+        .field-group select:focus {
+            border-color: rgba(var(--primary-rgb), 0.7);
+            box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.14);
+        }
+
+        .field-group select option {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 18px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            color: white;
+            font-weight: 700;
+            font-size: 0.94rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+            box-shadow: 0 12px 24px rgba(var(--primary-rgb), 0.22);
+            min-height: 48px;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, var(--primary-hover), var(--accent2-hover));
+        }
+
+        .btn-secondary {
+            background: rgba(var(--fg-rgb), 0.08);
+            box-shadow: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(var(--fg-rgb), 0.12);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            box-shadow: 0 12px 24px rgba(34, 197, 94, 0.18);
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #15803d, #166534);
+        }
+
+        .btn-sm {
+            padding: 10px 14px;
+            min-height: auto;
+            font-size: 0.88rem;
+        }
+
+        /* ── CHARTS GRID ── */
+        .charts-2col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .charts-3col {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+        }
+
+        .chart-box {
+            position: relative;
+            width: 100%;
+        }
+
+        canvas {
+            max-height: 280px;
+        }
+
+        /* ── TABLE ── */
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+            background: rgba(var(--fg-rgb), 0.02);
+        }
+
+        .report-table thead {
+            background: rgba(var(--fg-rgb), 0.06);
+        }
+
+        .report-table th,
+        .report-table td {
+            text-align: left;
+            padding: 13px 15px;
+            border-bottom: 1px solid rgba(var(--fg-rgb), 0.08);
+            font-size: 0.93rem;
+            white-space: nowrap;
+        }
+
+        .report-table th {
+            color: var(--text-soft);
+            font-weight: 700;
+        }
+
+        .report-table td {
+            color: var(--muted);
+        }
+
+        .report-table tbody tr:hover {
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .rank-1 {
+            background: rgba(245, 158, 11, 0.25);
+            color: var(--warn-text);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+
+        .rank-2 {
+            background: rgba(148, 163, 184, 0.18);
+            color: var(--muted);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+
+        .rank-3 {
+            background: rgba(180, 120, 60, 0.2);
+            color: #d4a76a;
+            border: 1px solid rgba(180, 120, 60, 0.3);
+        }
+
+        .rank-n {
+            background: rgba(var(--fg-rgb), 0.05);
+            color: var(--muted-2);
+            border: 1px solid rgba(var(--fg-rgb), 0.1);
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 96px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .status.ok {
+            color: var(--ok-text);
+            background: rgba(34, 197, 94, 0.14);
+            border-color: rgba(34, 197, 94, 0.28);
+        }
+
+        .status.warn {
+            color: var(--warn-text);
+            background: rgba(245, 158, 11, 0.14);
+            border-color: rgba(245, 158, 11, 0.28);
+        }
+
+        .status.danger {
+            color: var(--danger-text);
+            background: rgba(239, 68, 68, 0.14);
+            border-color: rgba(239, 68, 68, 0.28);
+        }
+
+        /* ── TABS ── */
+        .tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 18px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: rgba(var(--fg-rgb), 0.05);
+            color: var(--muted);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(var(--fg-rgb), 0.1);
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--accent2));
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 8px 20px rgba(var(--primary-rgb), 0.25);
+        }
+
+        /* ── MINI KPI ROW ── */
+        .mini-kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+
+        .mini-kpi {
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .mini-kpi .label {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .mini-kpi .value {
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .mini-kpi .sub {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-top: 3px;
+        }
+
+        .mini-kpi.accent-blue {
+            border-color: rgba(var(--primary-rgb), 0.3);
+            background: rgba(var(--primary-rgb), 0.06);
+        }
+
+        .mini-kpi.accent-green {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.06);
+        }
+
+        .mini-kpi.accent-purple {
+            border-color: rgba(var(--accent2-rgb), 0.3);
+            background: rgba(var(--accent2-rgb), 0.06);
+        }
+
+        .mini-kpi.accent-orange {
+            border-color: rgba(245, 158, 11, 0.3);
+            background: rgba(245, 158, 11, 0.06);
+        }
+
+        /* ── PRODUCT HIGHLIGHT ── */
+        .products-highlight {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+        }
+
+        .highlight-box {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            background: rgba(var(--fg-rgb), 0.04);
+        }
+
+        .highlight-box.best {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.04);
+        }
+
+        .highlight-box.worst {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.04);
+        }
+
+        .highlight-box h3 {
+            margin: 0 0 12px;
+            font-size: 1rem;
+        }
+
+        .product-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 11px 0;
+            border-bottom: 1px solid rgba(var(--fg-rgb), 0.07);
+            gap: 10px;
+        }
+
+        .product-item:last-child {
+            border-bottom: none;
+        }
+
+        .product-item .pname {
+            font-weight: 600;
+            font-size: 0.94rem;
+        }
+
+        .product-item .pcat {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        .product-item .pval {
+            text-align: right;
+        }
+
+        .product-item .pval strong {
+            display: block;
+            font-size: 0.94rem;
+        }
+
+        .product-item .pval span {
+            font-size: 0.82rem;
+            color: var(--muted);
+        }
+
+        /* ── HEATMAP ── */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: auto repeat(7, 1fr);
+            gap: 5px;
+            font-size: 0.78rem;
+        }
+
+        .heatmap-label {
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            padding-right: 8px;
+            font-weight: 600;
+        }
+
+        .heatmap-day-label {
+            color: var(--muted);
+            text-align: center;
+            padding-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .heatmap-cell {
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.15s;
+            position: relative;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 5;
+        }
+
+        .heat-0 {
+            background: rgba(var(--fg-rgb), 0.04);
+            color: var(--muted);
+        }
+
+        .heat-1 {
+            background: rgba(var(--primary-rgb), 0.15);
+            color: var(--primary-light);
+        }
+
+        .heat-2 {
+            background: rgba(var(--primary-rgb), 0.3);
+            color: var(--primary-light);
+        }
+
+        .heat-3 {
+            background: rgba(var(--primary-rgb), 0.5);
+            color: var(--primary-light);
+        }
+
+        .heat-4 {
+            background: rgba(var(--primary-rgb), 0.75);
+            color: white;
+        }
+
+        .heat-5 {
+            background: rgba(var(--primary-rgb), 1);
+            color: white;
+            box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.4);
+        }
+
+        /* ── FOOTER ── */
+        .dashboard-footer {
+            position: relative;
+            z-index: 2;
+            width: min(1180px, calc(100% - 28px));
+            margin: 0 auto 24px;
+            text-align: center;
+            color: var(--muted-2);
+            font-size: 0.9rem;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1100px) {
+            .reports-top {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-2col {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-3col {
+                grid-template-columns: 1fr;
+            }
+
+            .products-highlight {
+                grid-template-columns: 1fr;
+            }
+
+            .mini-kpi-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filters-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 14px;
+                gap: 12px;
+            }
+
+            .top-nav {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .top-nav a {
+                text-align: center;
+                background: rgba(var(--fg-rgb), 0.05);
+                font-size: 0.9rem;
+            }
+
+            .filters-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .mini-kpi-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .mini-kpi-row {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading spinner */
+        .chart-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--muted);
+            font-size: 0.93rem;
+            gap: 10px;
+        }
+
+        .spinner {
+            width: 22px;
+            height: 22px;
+            border: 2px solid rgba(var(--primary-rgb), 0.2);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Tooltip personalizado */
+        .custom-tooltip {
+            position: fixed;
+            background: rgba(var(--surface-rgb), 0.95);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v=1">
+    <script src="{{ url_for('static', filename='js/theme.js') }}?v=1"></script>
+</head>
+
+<body>
+    <div class="blob one"></div>
+    <div class="blob two"></div>
+    <div class="custom-tooltip" id="heatTooltip"></div>
+
+    <!-- HEADER -->
+    <header class="dashboard-header">
+        <a class="brand" href="{{ url_for('auth.index') }}">
+            <div class="logo">📦</div>
+            <div class="brand-title">
+                <strong>StockFlow</strong>
+                <span>Módulo de reportes</span>
+            </div>
+        </a>
+        <nav class="top-nav">
+            <a href="{{ url_for('bodega.dashboard') }}">Inventario</a>
+            <a href="{{ url_for('cajero.dashboard') }}">Ventas</a>
+            <a href="{{ url_for('reportes.dashboard') }}" style="background:rgba(59,130,246,.22);">Reportes</a>
+            <a href="{{ url_for('admin.users') }}">Usuarios</a>
+            <a href="{{ url_for('etiquetas.page') }}">🏷️ Etiquetas</a>
+            {% if is_superadmin %}<a href="{{ url_for('superadmin.stores') }}">🏬 Tiendas</a>{% endif %}
+            <a href="{{ url_for('auth.change_password') }}" title="Cambiar contraseña">👤 {{ current_username or '' }}{% if current_business_name %} · 🏪 {{ current_business_name }}{% endif %}</a>
+            <a href="{{ url_for('auth.logout') }}">Cerrar sesión</a>
+        </nav>
+    </header>
+
+    <main class="reports-main">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div style="display:grid; gap:10px; margin-bottom:18px;">
+            {% for category, message in messages %}
+            <div style="padding:12px 16px; border-radius:14px; font-weight:600; border:1px solid var(--border);
+                {% if category == 'success' %}background:rgba(34,197,94,.14); color:var(--ok-text);
+                {% elif category == 'warning' %}background:rgba(245,158,11,.14); color:var(--warn-text);
+                {% else %}background:rgba(239,68,68,.14); color:var(--danger-text);{% endif %}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <!-- HERO + KPIs LATERALES -->
+        <section class="reports-top">
+            <div class="reports-hero">
+                <div class="badge">📈 Análisis de ventas</div>
+                <h1>Panel de reportes</h1>
+                <p>
+                    Monitorea ventas diarias, semanales y mensuales. Identifica los productos más
+                    rentables, detecta stock crítico y toma decisiones con datos en tiempo real.
+                </p>
+            </div>
+
+            <div class="kpi-grid">
+                {# FIX 1: | abs no existe en Jinja2 — lanza TemplateAssertionError.
+                Se reemplaza guardando el valor en una variable con {% set %}
+                y usando el operador ternario para obtener el valor absoluto. #}
+                <div class="kpi-card">
+                    <span class="kpi-icon">💰</span>
+                    <div>
+                        <strong>${{ "{:,.0f}".format(kpi.ventas_hoy or 0).replace(",", ".") }}</strong>
+                        <p>Ventas hoy</p>
+                        {% set t = kpi.trend_hoy %}
+                        <div class="trend {{ 'up' if t >= 0 else 'down' }}">
+                            {{ '▲' if t >= 0 else '▼' }} {{ t if t >= 0 else -t }}% vs ayer
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-icon">📅</span>
+                    <div>
+                        <strong>${{ "{:,.0f}".format(kpi.ventas_semana or 0).replace(",", ".") }}</strong>
+                        <p>Esta semana</p>
+                        {% set t = kpi.trend_semana %}
+                        <div class="trend {{ 'up' if t >= 0 else 'down' }}">
+                            {{ '▲' if t >= 0 else '▼' }} {{ t if t >= 0 else -t }}% vs sem. anterior
+                        </div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-icon">🗓️</span>
+                    <div>
+                        <strong>${{ "{:,.0f}".format(kpi.ventas_mes or 0).replace(",", ".") }}</strong>
+                        <p>Este mes</p>
+                        {% set t = kpi.trend_mes %}
+                        <div class="trend {{ 'up' if t >= 0 else 'down' }}">
+                            {{ '▲' if t >= 0 else '▼' }} {{ t if t >= 0 else -t }}% vs mes anterior
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FILTROS GLOBALES -->
+        <section class="report-card">
+            <div class="card-head">
+                <h2>Filtros de periodo</h2>
+                <p>Ajusta el rango de fechas y la categoría para actualizar todos los reportes.</p>
+            </div>
+            <form class="filters-bar" method="GET" action="{{ url_for('reportes.dashboard') }}">
+                <div class="field-group">
+                    <label for="fecha_inicio">Fecha inicio</label>
+                    <input type="date" id="fecha_inicio" name="fecha_inicio"
+                        value="{{ filters.fecha_inicio if filters else '' }}">
+                </div>
+                <div class="field-group">
+                    <label for="fecha_fin">Fecha fin</label>
+                    <input type="date" id="fecha_fin" name="fecha_fin"
+                        value="{{ filters.fecha_fin if filters else '' }}">
+                </div>
+                <div class="field-group">
+                    <label for="categoria_filter">Categoría</label>
+                    <select id="categoria_filter" name="categoria">
+                        <option value="">Todas</option>
+                        {# FIX 2: espacios alrededor de == para consistencia y legibilidad #}
+                        <option value="Calzado" {{ 'selected' if filters.categoria=='Calzado' else '' }}>Calzado
+                        </option>
+                        <option value="Ropa" {{ 'selected' if filters.categoria=='Ropa' else '' }}>Ropa</option>
+                        <option value="Accesorios" {{ 'selected' if filters.categoria=='Accesorios' else '' }}>
+                            Accesorios</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label for="agrupacion">Agrupar por</label>
+                    <select id="agrupacion" name="agrupacion">
+                        <option value="dia" {{ 'selected' if filters.agrupacion=='dia' else '' }}>Día</option>
+                        <option value="semana" {{ 'selected' if filters.agrupacion=='semana' else '' }}>Semana</option>
+                        <option value="mes" {{ 'selected' if filters.agrupacion=='mes' else '' }}>Mes</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn" type="submit">Aplicar filtros →</button>
+                    <a class="btn btn-secondary" href="{{ url_for('reportes.dashboard') }}">Limpiar</a>
+                    <button class="btn btn-success btn-sm" type="button" onclick="exportarPDF()">⬇ Exportar PDF</button>
+                    <button class="btn btn-secondary btn-sm" type="button" onclick="exportarCSV()">⬇ Exportar
+                        CSV</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- MINI KPIs AVANZADOS -->
+        <section class="report-card" id="reportContent">
+            <div class="card-head">
+                <h2>Resumen del periodo</h2>
+                <p>Indicadores clave para el rango de fechas seleccionado.</p>
+            </div>
+
+            <div class="mini-kpi-row">
+                <div class="mini-kpi accent-blue">
+                    <div class="label">Total de ventas</div>
+                    <div class="value">${{ "{:,.0f}".format(resumen.total_ventas or 0).replace(",", ".") }}</div>
+                    <div class="sub">{{ resumen.num_transacciones or 0 }} transacciones</div>
+                </div>
+                <div class="mini-kpi accent-green">
+                    <div class="label">Unidades vendidas</div>
+                    <div class="value">{{ resumen.unidades_vendidas or 0 }}</div>
+                    <div class="sub">Promedio {{ resumen.promedio_unidades or 0 }} / día</div>
+                </div>
+                <div class="mini-kpi accent-purple">
+                    <div class="label">Ticket promedio</div>
+                    <div class="value">${{ "{:,.0f}".format(resumen.ticket_promedio or 0).replace(",", ".") }}</div>
+                    <div class="sub">Por transacción</div>
+                </div>
+                <div class="mini-kpi accent-orange">
+                    <div class="label">Mejor día</div>
+                    <div class="value">{{ resumen.mejor_dia or '—' }}</div>
+                    <div class="sub">${{ "{:,.0f}".format(resumen.mejor_dia_monto or 0).replace(",", ".") }}</div>
+                </div>
+            </div>
+
+            <!-- TABS PARA GRÁFICOS DE VENTAS -->
+            <div class="tabs" id="ventasTabs">
+                <button type="button" class="tab-btn active" onclick="switchTab(event,'dia')">Por día</button>
+                <button type="button" class="tab-btn" onclick="switchTab(event,'semana')">Por semana</button>
+                <button type="button" class="tab-btn" onclick="switchTab(event,'mes')">Por mes</button>
+            </div>
+
+            <div class="chart-box" id="chartVentas">
+                <canvas id="canvasVentasDia"></canvas>
+                <canvas id="canvasVentasSemana" style="display:none;"></canvas>
+                <canvas id="canvasVentasMes" style="display:none;"></canvas>
+            </div>
+        </section>
+
+        <!-- PRODUCTOS MÁS Y MENOS VENDIDOS -->
+        <section class="report-card">
+            <div class="card-head-row">
+                <h2>Ranking de productos</h2>
+                <span class="badge" style="margin:0;">{{ filters.fecha_inicio or 'Inicio' }} → {{ filters.fecha_fin or
+                    'Hoy' }}</span>
+            </div>
+
+            <div class="products-highlight">
+                <!-- MÁS VENDIDOS -->
+                <div class="highlight-box best">
+                    <h3>🏆 Más vendidos</h3>
+                    {% if top_products %}
+                    {% for p in top_products[:5] %}
+                    <div class="product-item">
+                        <div>
+                            <span
+                                class="rank-badge {{ 'rank-1' if loop.index==1 else ('rank-2' if loop.index==2 else ('rank-3' if loop.index==3 else 'rank-n')) }}">{{
+                                loop.index }}</span>
+                            &nbsp;
+                            <span class="pname">{{ p.name }}</span><br>
+                            <span class="pcat">{{ p.category or '' }} · {{ p.model or '' }}</span>
+                        </div>
+                        <div class="pval">
+                            <strong>{{ p.units_sold }} uds</strong>
+                            <span>${{ "{:,.0f}".format(p.revenue or 0).replace(",", ".") }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color:var(--muted); margin:0;">Sin datos en este periodo.</p>
+                    {% endif %}
+                </div>
+
+                <!-- MENOS VENDIDOS -->
+                <div class="highlight-box worst">
+                    <h3>📉 Menos vendidos</h3>
+                    {% if bottom_products %}
+                    {% for p in bottom_products[:5] %}
+                    <div class="product-item">
+                        <div>
+                            <span class="pname">{{ p.name }}</span><br>
+                            <span class="pcat">{{ p.category or '' }} · {{ p.model or '' }}</span>
+                        </div>
+                        <div class="pval">
+                            <strong>{{ p.units_sold }} uds</strong>
+                            <span>${{ "{:,.0f}".format(p.revenue or 0).replace(",", ".") }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color:var(--muted); margin:0;">Sin datos en este periodo.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- GRÁFICOS: CATEGORÍAS + TALLAS + COLORES -->
+        <section class="report-card">
+            <div class="card-head">
+                <h2>Distribución de ventas</h2>
+                <p>Desglose por categoría, talla más vendida y colores preferidos.</p>
+            </div>
+            <div class="charts-3col">
+                <div class="chart-box"><canvas id="canvasCategorias"></canvas></div>
+                <div class="chart-box"><canvas id="canvasTallas"></canvas></div>
+                <div class="chart-box"><canvas id="canvasColores"></canvas></div>
+            </div>
+        </section>
+
+        <!-- MAPA DE CALOR: VENTAS POR HORA Y DÍA DE SEMANA -->
+        <section class="report-card">
+            <div class="card-head">
+                <h2>Mapa de calor — Actividad por hora</h2>
+                <p>Identifica las franjas horarias con mayor volumen de ventas por día de la semana.</p>
+            </div>
+            <div id="heatmapWrap">
+                <div class="heatmap-grid" id="heatmapGrid">
+                    <!-- Generado por JS -->
+                </div>
+                <div style="margin-top:12px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span style="font-size:0.82rem; color:var(--muted);">Menos ventas</span>
+                    <div style="display:flex; gap:5px;">
+                        <div style="width:26px; height:26px; border-radius:6px;" class="heat-0"></div>
+                        <div style="width:26px; height:26px; border-radius:6px;" class="heat-1"></div>
+                        <div style="width:26px; height:26px; border-radius:6px;" class="heat-2"></div>
+                        <div style="width:26px; height:26px; border-radius:6px;" class="heat-3"></div>
+                        <div style="width:26px; height:26px; border-radius:6px;" class="heat-4"></div>
+                        <div style="width:26px; height:26px; border-radius:6px;" class="heat-5"></div>
+                    </div>
+                    <span style="font-size:0.82rem; color:var(--muted);">Más ventas</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TABLA DETALLADA DE VENTAS -->
+        <section class="report-card">
+            <div class="card-head-row">
+                <div>
+                    <h2>Detalle de ventas</h2>
+                    <p style="margin:4px 0 0; color:var(--muted); font-size:0.93rem;">Historial completo por transacción
+                        en el periodo.</p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="exportarCSV()">⬇ CSV</button>
+            </div>
+            <div class="table-wrap">
+                <table class="report-table" id="ventas-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Talla</th>
+                            <th>Color</th>
+                            <th>Cant.</th>
+                            <th>P. Unitario</th>
+                            <th>Total</th>
+                            <th>Vendedor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if ventas_detalle %}
+                        {% for v in ventas_detalle %}
+                        {# FIX 3: v.fecha puede llegar como string desde psycopg2 según configuración.
+                        Se verifica con "is not string" antes de llamar .strftime(),
+                        y se hace slice del ISO string como fallback seguro. #}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td>{{ v.fecha.strftime('%d/%m/%Y') if v.fecha and v.fecha is not string else (v.fecha[:10]
+                                if v.fecha else '—') }}</td>
+                            <td>{{ v.fecha.strftime('%H:%M') if v.fecha and v.fecha is not string else (v.fecha[11:16]
+                                if v.fecha else '—') }}</td>
+                            <td style="color:var(--text); font-weight:600;">{{ v.product_name }}</td>
+                            <td>{{ v.category or '—' }}</td>
+                            <td>{{ v.size or '—' }}</td>
+                            <td>{{ v.color or '—' }}</td>
+                            <td>{{ v.quantity }}</td>
+                            <td>${{ "{:,.0f}".format(v.unit_price or 0).replace(",", ".") }}</td>
+                            <td style="color:var(--success); font-weight:700;">${{ "{:,.0f}".format(v.total or
+                                0).replace(",", ".") }}</td>
+                            <td>{{ v.seller or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="11" style="text-align:center; color:var(--muted);">No hay ventas en este
+                                periodo.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- STOCK CRÍTICO -->
+        <section class="report-card">
+            <div class="card-head">
+                <h2>⚠️ Alertas de inventario</h2>
+                <p>Productos con stock bajo o agotado que requieren reposición urgente.</p>
+            </div>
+            <div class="charts-2col" style="margin-bottom:18px;">
+                <div class="chart-box"><canvas id="canvasStockCritico"></canvas></div>
+                <div class="chart-box"><canvas id="canvasRotacion"></canvas></div>
+            </div>
+            <div class="table-wrap">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Modelo</th>
+                            <th>Categoría</th>
+                            <th>Talla</th>
+                            <th>Color</th>
+                            <th>Ubicación</th>
+                            <th>Stock actual</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if stock_critico %}
+                        {% for p in stock_critico %}
+                        <tr>
+                            <td style="color:var(--text); font-weight:600;">{{ p.name }}</td>
+                            <td>{{ p.model or '—' }}</td>
+                            <td>{{ p.category or '—' }}</td>
+                            <td>{{ p.size or '—' }}</td>
+                            <td>{{ p.color or '—' }}</td>
+                            <td>{{ p.location or 'Sin ubicación' }}</td>
+                            <td>{{ p.stock }}</td>
+                            <td>
+                                {# FIX 4: la etiqueta de cierre {% endif %} estaba
+                                en la misma línea que el <span> anterior, confuso.
+                                    Se separa correctamente. #}
+                                    {% if p.stock <= 0 %} <span class="status danger">Agotado</span>
+                                {% else %}
+                                <span class="status warn">Stock bajo</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="8" style="text-align:center; color:var(--muted);">No hay productos en stock
+                                crítico. ✅</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- RENTABILIDAD POR CATEGORÍA -->
+        <section class="report-card">
+            <div class="card-head">
+                <h2>Rentabilidad por categoría</h2>
+                <p>Comparativa de ingresos por segmento de producto.</p>
+            </div>
+            <div class="chart-box">
+                <canvas id="canvasRentabilidad" style="max-height:260px;"></canvas>
+            </div>
+        </section>
+
+    </main>
+    <footer class="dashboard-footer">
+        © <span id="year"></span> StockFlow • Sistema de Inventario
+    </footer>
+
+    <footer class="dashboard-footer">
+        © <span id="year"></span> StockFlow • Sistema de Inventario
+    </footer>
+
+    <script>
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        // Colores del tema elegido (botón 🎨)
+        const THEME_VAR = (n, d) => (getComputedStyle(document.documentElement).getPropertyValue(n).trim() || d);
+        const THEME_PRIMARY = THEME_VAR('--primary', '#3b82f6');
+        const THEME_PRIMARY_RGB = THEME_VAR('--primary-rgb', '59, 130, 246');
+        const THEME_ACCENT2 = THEME_VAR('--accent2', '#8b5cf6');
+        const THEME_MUTED = THEME_VAR('--muted', '#cbd5e1');
+        const THEME_MUTED2 = THEME_VAR('--muted-2', '#94a3b8');
+        const THEME_FG = THEME_VAR('--fg-rgb', '255, 255, 255');
+        const THEME_TEXT = THEME_VAR('--text', '#f8fafc');
+
+        const PALETTE = [
+            THEME_PRIMARY, '#22c55e', THEME_ACCENT2, '#f59e0b', '#06b6d4',
+            '#ec4899', '#ef4444', '#a78bfa', '#34d399', '#fb923c'
+        ];
+
+        Chart.defaults.color = THEME_MUTED;
+        Chart.defaults.borderColor = `rgba(${THEME_FG},0.08)`;
+        Chart.defaults.font.family = 'Inter, sans-serif';
+        Chart.defaults.font.size = 12;
+
+        const tooltipDefaults = {
+            backgroundColor: 'rgba(15,23,42,0.95)',
+            borderColor: `rgba(${THEME_FG},0.12)`,
+            borderWidth: 1,
+            titleColor: '#f8fafc',
+            bodyColor: THEME_MUTED,
+            padding: 12,
+            cornerRadius: 10,
+        };
+
+        const baseOpts = (title = '') => ({
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { labels: { color: THEME_MUTED, usePointStyle: true, pointStyleWidth: 10 } },
+                title: title
+                    ? { display: true, text: title, color: THEME_TEXT, font: { size: 13, weight: '700' }, padding: { bottom: 12 } }
+                    : { display: false },
+                tooltip: tooltipDefaults,
+            },
+            scales: {
+                x: { ticks: { color: THEME_MUTED2 }, grid: { color: `rgba(${THEME_FG},0.05)` } },
+                y: { ticks: { color: THEME_MUTED2 }, grid: { color: `rgba(${THEME_FG},0.05)` } },
+            }
+        });
+
+        /* FIX PRINCIPAL: todos los graficos van DENTRO del .then() para que
+           DATOS exista cuando Chart.js lo necesita. En el original estaban
+           fuera y explotaban con ReferenceError: DATOS is not defined. */
+        fetch('{{ url_for('reportes.api_reportes') }}' + window.location.search)  /* respeta los filtros del formulario */
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(DATOS => {
+
+                /* VENTAS POR DIA */
+                const ctxDia = document.getElementById('canvasVentasDia').getContext('2d');
+                const gradDia = ctxDia.createLinearGradient(0, 0, 0, 260);
+                gradDia.addColorStop(0, `rgba(${THEME_PRIMARY_RGB},0.4)`);
+                gradDia.addColorStop(1, `rgba(${THEME_PRIMARY_RGB},0.02)`);
+                new Chart(ctxDia, {
+                    type: 'line',
+                    data: {
+                        labels: DATOS.ventas_dia.labels,
+                        datasets: [{
+                            label: 'Ventas ($)', data: DATOS.ventas_dia.values,
+                            borderColor: THEME_PRIMARY, backgroundColor: gradDia,
+                            borderWidth: 2.5, fill: true, tension: 0.4,
+                            pointBackgroundColor: THEME_PRIMARY, pointRadius: 4, pointHoverRadius: 7,
+                        }]
+                    },
+                    options: baseOpts('Ventas diarias'),
+                });
+
+                /* VENTAS POR SEMANA */
+                new Chart(document.getElementById('canvasVentasSemana'), {
+                    type: 'bar',
+                    data: {
+                        labels: DATOS.ventas_semana.labels,
+                        datasets: [{
+                            label: 'Ventas ($)', data: DATOS.ventas_semana.values,
+                            backgroundColor: DATOS.ventas_semana.values.map((_, i) => `rgba(139,92,246,${0.5 + i * 0.05})`),
+                            borderRadius: 8, borderSkipped: false,
+                        }]
+                    },
+                    options: baseOpts('Ventas por semana'),
+                });
+
+                /* VENTAS POR MES */
+                const ctxMes = document.getElementById('canvasVentasMes').getContext('2d');
+                const gradMes = ctxMes.createLinearGradient(0, 0, 0, 260);
+                gradMes.addColorStop(0, 'rgba(6,182,212,0.4)');
+                gradMes.addColorStop(1, 'rgba(6,182,212,0.02)');
+                new Chart(ctxMes, {
+                    type: 'line',
+                    data: {
+                        labels: DATOS.ventas_mes.labels,
+                        datasets: [{
+                            label: 'Ventas ($)', data: DATOS.ventas_mes.values,
+                            borderColor: '#06b6d4', backgroundColor: gradMes,
+                            borderWidth: 2.5, fill: true, tension: 0.4,
+                            pointBackgroundColor: '#06b6d4', pointRadius: 4, pointHoverRadius: 7,
+                        }]
+                    },
+                    options: baseOpts('Ventas mensuales'),
+                });
+
+                /* CATEGORIAS (donut) */
+                new Chart(document.getElementById('canvasCategorias'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: DATOS.categorias.labels,
+                        datasets: [{ data: DATOS.categorias.values, backgroundColor: PALETTE.slice(0, DATOS.categorias.labels.length), borderWidth: 0, hoverOffset: 8 }]
+                    },
+                    options: {
+                        responsive: true, cutout: '68%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: THEME_MUTED, padding: 14 } },
+                            title: { display: true, text: 'Ventas por categoria', color: THEME_TEXT, font: { size: 13, weight: '700' }, padding: { bottom: 8 } },
+                            tooltip: tooltipDefaults,
+                        }
+                    }
+                });
+
+                /* TALLAS (barras horizontales) */
+                new Chart(document.getElementById('canvasTallas'), {
+                    type: 'bar',
+                    data: {
+                        labels: DATOS.tallas.labels,
+                        datasets: [{ label: 'Unidades', data: DATOS.tallas.values, backgroundColor: DATOS.tallas.values.map((_, i) => `rgba(245,158,11,${0.35 + i * 0.08})`), borderRadius: 6, borderSkipped: false }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: true, text: 'Tallas mas vendidas', color: THEME_TEXT, font: { size: 13, weight: '700' }, padding: { bottom: 8 } },
+                            tooltip: tooltipDefaults,
+                        },
+                        scales: {
+                            x: { ticks: { color: THEME_MUTED2 }, grid: { color: `rgba(${THEME_FG},0.05)` } },
+                            y: { ticks: { color: THEME_MUTED }, grid: { color: `rgba(${THEME_FG},0.05)` } },
+                        }
+                    }
+                });
+
+                /* COLORES (polar) */
+                new Chart(document.getElementById('canvasColores'), {
+                    type: 'polarArea',
+                    data: {
+                        labels: DATOS.colores.labels,
+                        datasets: [{ data: DATOS.colores.values, backgroundColor: PALETTE.slice(0, DATOS.colores.labels.length).map(c => c + 'bb'), borderWidth: 0 }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: THEME_MUTED, padding: 10 } },
+                            title: { display: true, text: 'Colores mas vendidos', color: THEME_TEXT, font: { size: 13, weight: '700' }, padding: { bottom: 8 } },
+                            tooltip: tooltipDefaults,
+                        },
+                        scales: { r: { ticks: { color: THEME_MUTED2, backdropColor: 'transparent' }, grid: { color: `rgba(${THEME_FG},0.07)` } } }
+                    }
+                });
+
+                /* MAPA DE CALOR */
+                const dias = ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'];
+                const horas = ['6h', '7h', '8h', '9h', '10h', '11h', '12h', '13h', '14h', '15h', '16h', '17h', '18h', '19h', '20h', '21h'];
+                const grid = document.getElementById('heatmapGrid');
+                const tipEl = document.getElementById('heatTooltip');
+
+                /* maxVal dinamico — el original tenia 50 hardcodeado */
+                const maxVal = Math.max(...DATOS.heatmap.flat(), 1);
+
+                grid.innerHTML = '<div class="heatmap-label"></div>';
+                dias.forEach(d => {
+                    const el = document.createElement('div');
+                    el.className = 'heatmap-day-label';
+                    el.textContent = d;
+                    grid.appendChild(el);
+                });
+                horas.forEach((h, hi) => {
+                    const lbl = document.createElement('div');
+                    lbl.className = 'heatmap-label';
+                    lbl.textContent = h;
+                    grid.appendChild(lbl);
+                    dias.forEach((d, di) => {
+                        const val = (DATOS.heatmap[hi] && DATOS.heatmap[hi][di]) ? DATOS.heatmap[hi][di] : 0;
+                        const level = Math.min(5, Math.round((val / maxVal) * 5));
+                        const cell = document.createElement('div');
+                        cell.className = `heatmap-cell heat-${level}`;
+                        cell.textContent = val > 0 ? val : '';
+                        cell.addEventListener('mousemove', e => {
+                            tipEl.style.display = 'block';
+                            tipEl.innerHTML = `<strong>${d} ${h}</strong><br>${val} ventas`;
+                            tipEl.style.left = (e.clientX + 14) + 'px';
+                            tipEl.style.top = (e.clientY - 36) + 'px';
+                        });
+                        cell.addEventListener('mouseleave', () => tipEl.style.display = 'none');
+                        grid.appendChild(cell);
+                    });
+                });
+
+                /* STOCK CRITICO */
+                new Chart(document.getElementById('canvasStockCritico'), {
+                    type: 'bar',
+                    data: {
+                        labels: DATOS.stock_critico_chart.labels,
+                        datasets: [{
+                            label: 'Stock actual', data: DATOS.stock_critico_chart.values,
+                            backgroundColor: DATOS.stock_critico_chart.values.map(v => v <= 0 ? 'rgba(239,68,68,0.7)' : 'rgba(245,158,11,0.6)'),
+                            borderRadius: 8, borderSkipped: false,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false },
+                            title: { display: true, text: 'Stock critico por producto', color: THEME_TEXT, font: { size: 13, weight: '700' }, padding: { bottom: 8 } },
+                            tooltip: tooltipDefaults,
+                        },
+                        scales: {
+                            x: { ticks: { color: THEME_MUTED2, maxRotation: 35 }, grid: { color: `rgba(${THEME_FG},0.05)` } },
+                            y: { ticks: { color: THEME_MUTED2 }, grid: { color: `rgba(${THEME_FG},0.05)` } },
+                        }
+                    }
+                });
+
+                /* ROTACION */
+                new Chart(document.getElementById('canvasRotacion'), {
+                    type: 'radar',
+                    data: {
+                        labels: DATOS.rotacion.labels,
+                        datasets: [{
+                            label: 'Rotacion (unidades/semana)', data: DATOS.rotacion.values,
+                            borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.15)',
+                            borderWidth: 2, pointBackgroundColor: '#06b6d4', pointRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: { display: true, text: 'Rotacion de inventario por categoria', color: THEME_TEXT, font: { size: 13, weight: '700' }, padding: { bottom: 8 } },
+                            legend: { labels: { color: THEME_MUTED } },
+                            tooltip: tooltipDefaults,
+                        },
+                        scales: {
+                            r: {
+                                ticks: { color: THEME_MUTED2, backdropColor: 'transparent', stepSize: 5 },
+                                grid: { color: `rgba(${THEME_FG},0.08)` },
+                                angleLines: { color: `rgba(${THEME_FG},0.08)` },
+                                pointLabels: { color: THEME_MUTED, font: { size: 12 } },
+                            }
+                        }
+                    }
+                });
+
+                /* RENTABILIDAD */
+                new Chart(document.getElementById('canvasRentabilidad'), {
+                    type: 'bar',
+                    data: {
+                        labels: DATOS.rentabilidad.labels,
+                        datasets: [
+                            { label: 'Ingresos ($)', data: DATOS.rentabilidad.ingresos, backgroundColor: 'rgba(34,197,94,0.65)', borderRadius: 8, borderSkipped: false },
+                            { label: 'Unidades', data: DATOS.rentabilidad.unidades, backgroundColor: `rgba(${THEME_PRIMARY_RGB},0.5)`, borderRadius: 8, borderSkipped: false, yAxisID: 'y2' },
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { labels: { color: THEME_MUTED, usePointStyle: true } },
+                            tooltip: tooltipDefaults,
+                        },
+                        scales: {
+                            x: { ticks: { color: THEME_MUTED2 }, grid: { color: `rgba(${THEME_FG},0.05)` } },
+                            y: { ticks: { color: THEME_MUTED2 }, grid: { color: `rgba(${THEME_FG},0.05)` }, title: { display: true, text: 'Ingresos ($)', color: THEME_MUTED2 } },
+                            y2: { position: 'right', ticks: { color: THEME_MUTED2 }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Unidades', color: THEME_MUTED2 } },
+                        }
+                    }
+                });
+
+            })
+            .catch(err => {
+                /* FIX: el original no manejaba errores del fetch en absoluto */
+                console.error('Error cargando datos del reporte:', err);
+                document.querySelectorAll('canvas').forEach(c => {
+                    const msg = document.createElement('p');
+                    msg.style.cssText = 'color:#ef4444;text-align:center;padding:20px;margin:0;';
+                    msg.textContent = 'Error al cargar datos. Recarga la pagina.';
+                    c.replaceWith(msg);
+                });
+            });
+
+        /* TABS — fuera del fetch, no dependen de DATOS */
+        function switchTab(event, period) {
+            const ids = { dia: 'canvasVentasDia', semana: 'canvasVentasSemana', mes: 'canvasVentasMes' };
+            Object.values(ids).forEach(id => document.getElementById(id).style.display = 'none');
+            document.getElementById(ids[period]).style.display = 'block';
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        /* EXPORTAR CSV — fuera del fetch, lee el DOM directamente */
+        function exportarCSV() {
+            const table = document.getElementById('ventas-table');
+            const rows = Array.from(table.querySelectorAll('tr'));
+            const csv = rows.map(r =>
+                Array.from(r.querySelectorAll('th,td'))
+                    .map(c => '"' + c.innerText.replace(/"/g, '""') + '"')
+                    .join(',')
+            ).join('\n');
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reporte_ventas_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        /* EXPORTAR PDF */
+        async function exportarPDF() {
+            const { jsPDF } = window.jspdf;
+            const el = document.getElementById('reportContent');
+            const canvas = await html2canvas(el, { scale: 1.5, useCORS: true, backgroundColor: (getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#0f172a') });
+            const img = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const pdfH = pageW / (canvas.width / canvas.height);
+            let pos = 0;
+            pdf.addImage(img, 'PNG', 0, 0, pageW, pdfH);
+            while (pos + pageH < pdfH) {
+                pos += pageH;
+                pdf.addPage();
+                pdf.addImage(img, 'PNG', 0, -pos, pageW, pdfH);
+            }
+            pdf.save(`reporte_stockflow_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
+    </script>
+</body>
+
+</html>
